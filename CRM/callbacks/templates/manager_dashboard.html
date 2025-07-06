@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard | {{ manager.username }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #f8f9fc;
+            --success-color: #1cc88a;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --agent-color: #36b9cc;
+            --text-dark: #2c3e50;
+            --shadow: 0 4px 12px rgba(0,0,0,0.15);
+            --border-radius: 10px;
+            --transition: all 0.3s ease;
+        }
+        body {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #e8ecef 100%);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+        .navbar {
+            box-shadow: var(--shadow);
+            background: linear-gradient(to right, #2c3e50, #34495e);
+            transition: var(--transition);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff !important;
+            transition: transform 0.2s ease;
+        }
+        .navbar-brand:hover {
+            transform: scale(1.05);
+        }
+        .user-greeting {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            transition: var(--transition);
+        }
+        .role-badge {
+            padding: 0.3rem 0.75rem;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+        }
+        .role-badge:hover {
+            transform: translateY(-2px);
+        }
+        .role-agent {
+            background-color: var(--agent-color);
+        }
+        .role-manager {
+            background-color: var(--primary-color);
+        }
+        .role-admin {
+            background-color: var(--danger-color);
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .table {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+        }
+        .table td {
+            vertical-align: middle;
+            padding: 0.75rem;
+        }
+        .action-buttons .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.875rem;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-primary:hover {
+            background-color: #2e59d9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-success {
+            background-color: var(--success-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-success:hover {
+            background-color: #17a673;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-danger {
+            background-color: var(--danger-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-danger:hover {
+            background-color: #c6392f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .form-control, .form-select {
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+            transform: scale(1.01);
+        }
+        .modal-content {
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .alert {
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+        @media (max-width: 992px) {
+            .main-container {
+                margin: 1rem auto;
+                padding: 1rem;
+            }
+            .table th, .table td {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+            .action-buttons .btn {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+            .user-greeting {
+                font-size: 0.85rem;
+            }
+        }
+        @media (max-width: 768px) {
+            .table-responsive {
+                border: none;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .table {
+                min-width: 700px;
+            }
+            .action-buttons .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            .navbar-nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+            .form-control, .form-select {
+                font-size: 0.9rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 576px) {
+            .table th, .table td {
+                font-size: 0.8rem;
+                padding: 0.4rem;
+            }
+            .action-buttons .btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+            h2 {
+                font-size: 1.25rem;
+            }
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            .user-greeting {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        }
+        .table-responsive {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'callbacklist' %}">
+                <i class="bi bi-telephone-outbound-fill me-2"></i>
+                Callback System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                    <a class="nav-link" href="javascript:history.back()">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                    <div class="user-greeting text-light me-3">
+                        <i class="bi bi-person-circle"></i>
+                        <span>{{ user.username }}</span>
+                        <span class="role-badge role-{{ user_role }}">{{ user_role|title }}</span>
+                    </div>
+                    <a class="nav-link" href="{% url 'logout' %}">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Manager Dashboard
+                    <small class="text-muted">({{ agents.count }} agents)</small>
+                </h2>
+                {% if user_role == 'admin' %}
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignAgentModal">
+                    <i class="bi bi-person-plus me-1"></i>
+                    Assign Agent
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%">Username</th>
+                            <th style="width: 20%">Email</th>
+                            <th style="width: 15%">Role</th>
+                            <th style="width: 15%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agent in agents %}
+                        <tr>
+                            <td>{{ agent.username }}</td>
+                            <td>{{ agent.email|default:"No email" }}</td>
+                            <td>
+                                <span class="role-badge role-{{ agent.userprofile.role|default:'agent' }}">
+                                    {{ agent.userprofile.role|title|default:"Agent" }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'view_user_callbacks' agent.id %}" 
+                                       class="btn btn-sm btn-primary" 
+                                       title="View Callbacks">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if user_role == 'admin' %}
+                                    <button class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#unassignAgentModal" 
+                                            data-agent-id="{{ agent.id }}"
+                                            data-agent-username="{{ agent.username }}"
+                                            title="Unassign Agent">
+                                        <i class="bi bi-person-dash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No agents assigned to this manager.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if user_role == 'admin' %}
+    <div class="modal fade" id="assignAgentModal" tabindex="-1" aria-labelledby="assignAgentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignAgentModalLabel">Assign Agent to {{ manager.username }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'manager_dashboard' manager.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="assign_agent">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="agent_id" class="form-label">Select Agent</label>
+                            <select name="agent_id" id="agent_id" class="form-select" required>
+                                {% for agent in available_agents %}
+                                    <option value="{{ agent.id }}">{{ agent.username }} ({{ agent.email|default:"No email" }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Assign Agent</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="unassignAgentModal" tabindex="-1" aria-labelledby="unassignAgentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="unassignAgentModalLabel">Unassign Agent <span id="agentUsername"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'manager_dashboard' manager.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="unassign_agent">
+                    <input type="hidden" name="agent_id" id="unassignAgentId">
+                    <div class="modal-body">
+                        Are you sure you want to unassign the agent <span id="agentUsernameText"></span> from {{ manager.username }}?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger">Unassign Agent</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            var unassignAgentModal = document.getElementById('unassignAgentModal');
+            if (unassignAgentModal) {
+                unassignAgentModal.addEventListener('show.bs.modal', function(event) {
+                    var button = event.relatedTarget;
+                    var agentId = button.getAttribute('data-agent-id');
+                    var agentUsername = button.getAttribute('data-agent-username');
+                    var modal = this;
+                    modal.querySelector('#unassignAgentId').value = agentId;
+                    modal.querySelector('#agentUsername').textContent = agentUsername;
+                    modal.querySelector('#agentUsernameText').textContent = agentUsername;
+                });
+            }
+        });
+    </script>
+</body>
+</html>
