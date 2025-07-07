@@ -319,8 +319,8 @@
                                     <input type="text" name="phone_number" 
                                            class="form-control editable phone-input" 
                                            value="{{ callback.phone_number|default_if_none:'' }}" 
-                                           pattern="[\+\-0-9\s]+" 
-                                           title="Only numbers, +, - and spaces allowed" 
+                                           pattern="[\+\-\(\),./#0-9\s]+" 
+                                           title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
                                            maxlength="20" 
                                            {% if not can_edit %}disabled{% endif %}>
                                 </td>
@@ -334,10 +334,19 @@
                                         {% if not can_edit %}disabled{% endif %}>
                                 </td>
                                 <td>
-                                    <textarea name="remarks" 
-                                              class="form-control editable" 
-                                              rows="1" 
-                                              {% if not can_edit %}disabled{% endif %}>{{ callback.remarks|default_if_none:'' }}</textarea>
+                                    <select name="remarks" 
+                                            class="form-control editable" 
+                                            {% if not can_edit %}disabled{% endif %}>
+                                        <option value="" {% if not callback.remarks %}selected{% endif %}>Select</option>
+                                        <option value="Interested" {% if callback.remarks == 'Interested' %}selected{% endif %}>Interested</option>
+                                        <option value="Call Back Later" {% if callback.remarks == 'Call Back Later' %}selected{% endif %}>Call Back Later</option>
+                                        <option value="Not Interested" {% if callback.remarks == 'Not Interested' %}selected{% endif %}>Not Interested</option>
+                                        <option value="Wrong Number" {% if callback.remarks == 'Wrong Number' %}selected{% endif %}>Wrong Number</option>
+                                        <option value="Deal Closed" {% if callback.remarks == 'Deal Closed' %}selected{% endif %}>Deal Closed</option>
+                                        <option value="Number Busy / Not Reachable" {% if callback.remarks == 'Number Busy / Not Reachable' %}selected{% endif %}>Number Busy / Not Reachable</option>
+                                        <option value="Already Has a Service" {% if callback.remarks == 'Already Has a Service' %}selected{% endif %}>Already Has a Service</option>
+                                        <option value="Need More Info" {% if callback.remarks == 'Need More Info' %}selected{% endif %}>Need More Info</option>
+                                    </select>
                                 </td>
                                 <td>
                                     <textarea name="notes" 
@@ -369,8 +378,8 @@
                                     <input type="text" name="phone_number" 
                                            class="form-control editable phone-input" 
                                            placeholder="" 
-                                           pattern="[\+\-0-9\s]+" 
-                                           title="Only numbers, +, - and spaces allowed" 
+                                           pattern="[\+\-\(\),./#0-9\s]+" 
+                                           title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
                                            maxlength="20">
                                 </td>
                                 <td>
@@ -382,10 +391,17 @@
                                         title="Enter a valid URL (e.g., http://example.com)">
                                 </td>
                                 <td>
-                                    <textarea name="remarks" 
-                                              class="form-control editable" 
-                                              rows="1" 
-                                              placeholder=""></textarea>
+                                    <select name="remarks" class="form-control editable">
+                                        <option value="" selected>Select</option>
+                                        <option value="Interested">Interested</option>
+                                        <option value="Call Back Later">Call Back Later</option>
+                                        <option value="Not Interested">Not Interested</option>
+                                        <option value="Wrong Number">Wrong Number</option>
+                                        <option value="Deal Closed">Deal Closed</option>
+                                        <option value="Number Busy / Not Reachable">Number Busy / Not Reachable</option>
+                                        <option value="Already Has a Service">Already Has a Service</option>
+                                        <option value="Need More Info">Need More Info</option>
+                                    </select>
                                 </td>
                                 <td>
                                     <textarea name="notes" 
@@ -413,86 +429,103 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Save button functionality
-                const saveButton = document.getElementById('saveData');
-                if (saveButton) {
-                    saveButton.addEventListener('click', function() {
-                        document.getElementById('callbackForm').submit();
-                    });
-                }
-                
-                // Add new row functionality
-                const addRowButton = document.querySelector('.add-row-btn');
-                if (addRowButton) {
-                    addRowButton.addEventListener('click', function() {
-                        const newRow = document.querySelector('.new-entry-row').cloneNode(true);
-                        const inputs = newRow.querySelectorAll('input, textarea');
-                        
-                        inputs.forEach(input => {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Save button functionality
+            const saveButton = document.getElementById('saveData');
+            if (saveButton) {
+                saveButton.addEventListener('click', function() {
+                    document.getElementById('callbackForm').submit();
+                });
+            }
+            
+            // Add new row functionality
+            const addRowButton = document.querySelector('.add-row-btn');
+            if (addRowButton) {
+                addRowButton.addEventListener('click', function() {
+                    const newRow = document.querySelector('.new-entry-row').cloneNode(true);
+                    const inputs = newRow.querySelectorAll('input, textarea, select');
+                    
+                    inputs.forEach(input => {
+                        if (input.tagName === 'SELECT') {
                             input.value = '';
-                            if (input.type === 'checkbox') {
-                                input.checked = false;
-                            }
-                        });
-                        
-                        const tableBody = document.querySelector('#callbackTable tbody');
-                        const lastRow = tableBody.lastElementChild;
-                        tableBody.insertBefore(newRow, lastRow);
-                        
-                        newRow.querySelector('input').focus();
-                    });
-                }
-                
-                // Form validation
-                const callbackForm = document.getElementById('callbackForm');
-                if (callbackForm) {
-                    callbackForm.addEventListener('submit', function(e) {
-                        const nameInputs = document.querySelectorAll('.name-input');
-                        const phoneInputs = document.querySelectorAll('.phone-input');
-                        const websiteInputs = document.querySelectorAll('.website-input');
-                        let isValid = true;
-                        
-                        nameInputs.forEach(input => {
-                            if (input.value.trim() === '' && !input.disabled) {
-                                input.classList.add('is-invalid');
-                                isValid = false;
-                            } else {
-                                input.classList.remove('is-invalid');
-                            }
-                        });
-                        
-                        phoneInputs.forEach(input => {
-                            if (input.value.trim() === '' && !input.disabled) {
-                                input.classList.add('is-invalid');
-                                isValid = false;
-                            } else {
-                                input.classList.remove('is-invalid');
-                            }
-                        });
-                        
-                        websiteInputs.forEach(input => {
-                            if (input.value.trim() !== '' && !input.disabled) {
-                                const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/;
-                                if (!urlPattern.test(input.value.trim())) {
-                                    input.classList.add('is-invalid');
-                                    isValid = false;
-                                } else {
-                                    input.classList.remove('is-invalid');
-                                }
-                            } else {
-                                input.classList.remove('is-invalid');
-                            }
-                        });
-                        
-                        if (!isValid) {
-                            e.preventDefault();
-                            alert('Please fill in all required fields (Customer Name and Phone Number) and ensure Website fields contain valid URLs for editable rows.');
+                        } else {
+                            input.value = '';
+                        }
+                        if (input.type === 'checkbox') {
+                            input.checked = false;
                         }
                     });
-                }
+                    
+                    const tableBody = document.querySelector('#callbackTable tbody');
+                    const lastRow = tableBody.lastElementChild;
+                    tableBody.insertBefore(newRow, lastRow);
+                    
+                    newRow.querySelector('input').focus();
+                });
+            }
+            
+            // Form validation
+            const callbackForm = document.getElementById('callbackForm');
+            if (callbackForm) {
+                callbackForm.addEventListener('submit', function(e) {
+                    const nameInputs = document.querySelectorAll('.name-input');
+                    const phoneInputs = document.querySelectorAll('.phone-input');
+                    const websiteInputs = document.querySelectorAll('.website-input');
+                    let isValid = true;
+                    
+                    nameInputs.forEach(input => {
+                        if (input.value.trim() === '' && !input.disabled) {
+                            input.classList.add('is-invalid');
+                            isValid = false;
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    phoneInputs.forEach(input => {
+                        if (input.value.trim() === '' && !input.disabled) {
+                            input.classList.add('is-invalid');
+                            isValid = false;
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    websiteInputs.forEach(input => {
+                        if (input.value.trim() !== '' && !input.disabled) {
+                            const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/;
+                            if (!urlPattern.test(input.value.trim())) {
+                                input.classList.add('is-invalid');
+                                isValid = false;
+                            } else {
+                                input.classList.remove('is-invalid');
+                            }
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        alert('Please fill in all required fields (Customer Name and Phone Number) and ensure Website fields contain valid URLs for editable rows.');
+                    }
+                });
+            }
+
+            // Disable copy, cut, and paste
+            if ('{{ user_role }}' === 'agent'){
+            document.addEventListener('copy', function(e) {
+                e.preventDefault();
             });
+            document.addEventListener('cut', function(e) {
+                e.preventDefault();
+            });
+            document.addEventListener('paste', function(e) {
+                e.preventDefault();
+            });
+           }
+        });
     </script>
 </body>
 </html>

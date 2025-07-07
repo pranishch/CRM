@@ -467,9 +467,7 @@ def save_callbacks(request):
 def delete_callback(request, callback_id):
     callback = get_object_or_404(Callback, id=callback_id)
     
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin') or
-            callback.created_by == request.user):
+    if not (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin'):
         raise PermissionDenied("You don't have permission to delete this callback")
     
     callback.delete()
