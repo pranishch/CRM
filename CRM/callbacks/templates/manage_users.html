@@ -132,6 +132,15 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
+        .btn-warning {
+            background-color: #ffc107;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
         .form-control, .form-select {
             border-radius: 6px;
             transition: all 0.3s ease;
@@ -153,7 +162,7 @@
         /* Enhanced Responsiveness */
         @media (max-width: 992px) {
             .main-container {
-                margin: 1 Mathias van de Venrem auto;
+                margin: 1rem auto;
                 padding: 1.5rem;
             }
             .table th, .table td {
@@ -252,13 +261,9 @@
                             <li><a class="dropdown-item" href="{% url 'manage_managers' %}">
                                 <i class="bi bi-person-gear me-2"></i>Manage Managers
                             </a></li>
-                            <!-- <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/admin/">
-                                <i class="bi bi-gear me-2"></i>Django Admin
-                            </a></li> -->
                         </ul>
                     </div>
-                    <div class="text- Mathias van de Venlight me-3">
+                    <div class="text-light me-3">
                         <i class="bi bi-person-circle me-1"></i>
                         <span>{{ user.username }}</span>
                         <span class="role-badge role-admin">Admin</span>
@@ -299,8 +304,7 @@
                         <tr>
                             <th style="width: 25%">Username</th>
                             <th style="width: 25%">Email</th>
-                            <!-- <th style="width: 25%">Status</th> -->
-                            <th style="width: 25%">Actions</th>
+                            <th style="width: 50%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -316,6 +320,15 @@
                                     title="View Callbacks">
                                         <i class="bi bi-telephone"></i>
                                     </a>
+                                    <button class="btn btn-sm btn-action btn-outline-warning" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editUserModal" 
+                                            data-user-id="{{ user_obj.id }}"
+                                            data-username="{{ user_obj.username }}"
+                                            data-email="{{ user_obj.email }}"
+                                            title="Edit User">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-action btn-outline-primary" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#changeRoleModal" 
@@ -344,7 +357,7 @@
                         {% endif %}
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center">No agents found.</td>
+                            <td colspan="3" class="text-center">No agents found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -354,7 +367,7 @@
     </div>
 
     <!-- Create User Modal -->
-    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby.createUserModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -412,6 +425,37 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Edit User <span id="editUsername"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'manage_users' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="user_id" id="editUserId">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_username" class="form-label">Username</label>
+                            <input type="text" name="username" id="edit_username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_email" class="form-label">Email</label>
+                            <input type="email" name="email" id="edit_email" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Change Role Modal -->
     <div class="modal fade" id="changeRoleModal" tabindex="-1" aria-labelledby="changeRoleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -437,32 +481,6 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Change Role</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toggle Status Modal -->
-    <div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-labelledby="toggleStatusModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="toggleStatusModalLabel"><span id="statusAction"></span> User <span id="statusUsername"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="post" action="{% url 'manage_users' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" id="toggleStatusAction">
-                    <input type="hidden" name="user_id" id="toggleStatusUserId">
-                    <div class="modal-body">
-                        Are you sure you want to <span id="statusActionText"></span> the user <span id="statusUsernameText"></span>?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">
-                            <span id="statusButtonText"></span>
-                        </button>
                     </div>
                 </form>
             </div>
@@ -504,6 +522,19 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             });
 
+            var editUserModal = document.getElementById('editUserModal');
+            editUserModal.addEventListener('show.bs.modal', function(event) {
+                var button = event.relatedTarget;
+                var userId = button.getAttribute('data-user-id');
+                var username = button.getAttribute('data-username');
+                var email = button.getAttribute('data-email');
+                var modal = this;
+                modal.querySelector('#editUserId').value = userId;
+                modal.querySelector('#editUsername').textContent = username;
+                modal.querySelector('#edit_username').value = username;
+                modal.querySelector('#edit_email').value = email || '';
+            });
+
             var changeRoleModal = document.getElementById('changeRoleModal');
             changeRoleModal.addEventListener('show.bs.modal', function(event) {
                 var button = event.relatedTarget;
@@ -524,6 +555,6 @@
                 modal.querySelector('#passwordUsername').textContent = username;
             });
         });
-</script>
+    </script>
 </body>
 </html>

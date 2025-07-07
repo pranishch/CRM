@@ -317,6 +317,15 @@
                                     </a>
                                     <button class="btn btn-sm btn-action btn-outline-primary" 
                                             data-bs-toggle="modal" 
+                                            data-bs-target="#editManagerModal" 
+                                            data-user-id="{{ manager.id }}"
+                                            data-username="{{ manager.username }}"
+                                            data-email="{{ manager.email|default:'' }}"
+                                            title="Edit Manager">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-action btn-outline-primary" 
+                                            data-bs-toggle="modal" 
                                             data-bs-target="#changeRoleModal" 
                                             data-user-id="{{ manager.id }}"
                                             data-username="{{ manager.username }}"
@@ -405,6 +414,36 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Create Manager</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Edit Manager Modal -->
+    <div class="modal fade" id="editManagerModal" tabindex="-1" aria-labelledby="editManagerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editManagerModalLabel">Edit Manager <span id="editManagerUsername"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'manage_managers' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="user_id" id="editManagerUserId">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" name="username" id="editManagerUsernameInput" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" name="email" id="editManagerEmailInput" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </form>
             </div>
@@ -520,6 +559,19 @@
                 var modal = this;
                 modal.querySelector('#resetPasswordUserId').value = userId;
                 modal.querySelector('#passwordUsername').textContent = username;
+            });
+
+            var editManagerModal = document.getElementById('editManagerModal');
+            editManagerModal.addEventListener('show.bs.modal', function(event) {
+                var button = event.relatedTarget;
+                var userId = button.getAttribute('data-user-id');
+                var username = button.getAttribute('data-username');
+                var email = button.getAttribute('data-email');
+                var modal = this;
+                modal.querySelector('#editManagerUserId').value = userId;
+                modal.querySelector('#editManagerUsername').textContent = username;
+                modal.querySelector('#editManagerUsernameInput').value = username;
+                modal.querySelector('#editManagerEmailInput').value = email || '';
             });
         });
 </script>

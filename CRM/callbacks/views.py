@@ -78,6 +78,20 @@ def manage_users(request):
                 for error in form.errors.values():
                     messages.error(request, error)
         
+        elif action == 'edit':
+            user = get_object_or_404(User, id=user_id)
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            if username and username != user.username:
+                if User.objects.filter(username=username).exclude(id=user_id).exists():
+                    messages.error(request, f'Username {username} is already taken.')
+                else:
+                    user.username = username
+            if email != user.email:
+                user.email = email if email else ''
+            user.save()
+            messages.success(request, f'User {user.username} updated successfully!')
+        
         elif action == 'change_role':
             user = get_object_or_404(User, id=user_id)
             new_role = request.POST.get('new_role')
@@ -140,6 +154,20 @@ def manage_managers(request):
             else:
                 for error in form.errors.values():
                     messages.error(request, error)
+        
+        elif action == 'edit':
+            user = get_object_or_404(User, id=user_id)
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            if username and username != user.username:
+                if User.objects.filter(username=username).exclude(id=user_id).exists():
+                    messages.error(request, f'Username {username} is already taken.')
+                else:
+                    user.username = username
+            if email != user.email:
+                user.email = email if email else ''
+            user.save()
+            messages.success(request, f'Manager {user.username} updated successfully!')
         
         elif action == 'change_role':
             user = get_object_or_404(User, id=user_id)
