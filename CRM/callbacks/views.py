@@ -190,12 +190,23 @@ def manager_dashboard(request, manager_id):
     }
     return render(request, 'manager_dashboard.html', context)
 
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
+from .models import User, Callback  # Adjust imports based on your actual models
+
 @login_required
 @csrf_protect
 def view_user_callbacks(request, user_id):
     target_user = get_object_or_404(User, id=user_id)
     current_user = request.user
     
+    # Restrict access to only the logged-in user's callbacks unless admin or manager
+    if current_user != target_user and not (current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role in ['admin', 'manager'])):
+        messages.error(request, 'Access denied. You can only view your own callbacks.')
+        return redirect('callbacklist')  # Redirect to the logged-in user's callback list
+
     if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
         callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
         can_edit = True
@@ -244,6 +255,10 @@ def callbacklist(request, user_id=None):
     if user_id:
         # User-specific callbacks
         target_user = get_object_or_404(User, id=user_id)
+        # Restrict access to only the logged-in user's callbacks unless admin or manager
+        if request.user != target_user and not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
+            messages.error(request, 'Access denied. You can only view your own callbacks.')
+            return redirect('callbacklist')  # Redirect to the logged-in user's callback list
         # Filter callbacks where the user is either the creator or assigned
         callbacks = Callback.objects.filter(created_by=target_user)
         context.update({
