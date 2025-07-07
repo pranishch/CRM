@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.contrib import messages, auth
 from django.http import JsonResponse, HttpResponseForbidden
 from django.core.exceptions import ValidationError, PermissionDenied
@@ -301,7 +302,7 @@ def view_user_callbacks(request, user_id):
     # Restrict access to only the logged-in user's callbacks unless admin or manager
     if current_user != target_user and not (current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role in ['admin', 'manager'])):
         messages.error(request, 'Access denied. You can only view your own callbacks.')
-        return redirect('callbacklist')  # Redirect to the logged-in user's callback list
+        return redirect('callbacklist')
 
     if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
         callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
@@ -319,11 +320,17 @@ def view_user_callbacks(request, user_id):
         if current_user != target_user:
             messages.error(request, 'Access denied.')
             return redirect('callbacklist')
-        callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
+        callbacks = Callback.objects.filter(created_by=current_user).order_by('-created_at')
         can_edit = True
     
+    # Add pagination
+    paginator = Paginator(callbacks, 10)  # Show 10 callbacks per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'callbacks': callbacks,
+        'callbacks': page_obj.object_list,
+        'page_obj': page_obj,
         'target_user': target_user,
         'can_edit': can_edit,
         'is_viewing_other': current_user != target_user,
@@ -356,9 +363,8 @@ def callbacklist(request, user_id=None):
             messages.error(request, 'Access denied. You can only view your own callbacks.')
             return redirect('callbacklist')  # Redirect to the logged-in user's callback list
         # Filter callbacks where the user is either the creator or assigned
-        callbacks = Callback.objects.filter(created_by=target_user)
+        callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
         context.update({
-            'callbacks': callbacks,
             'is_viewing_other': True,
             'target_user': target_user,
         })
@@ -366,14 +372,23 @@ def callbacklist(request, user_id=None):
         # General callback list
         if user_role == 'agent':
             # Agents see only their own callbacks
-            callbacks = Callback.objects.filter(created_by=request.user)
+            callbacks = Callback.objects.filter(created_by=request.user).order_by('-created_at')
         else:
             # Admins and managers see all callbacks
-            callbacks = Callback.objects.all()
+            callbacks = Callback.objects.all().order_by('-created_at')
         context.update({
-            'callbacks': callbacks,
             'is_viewing_other': False,
         })
+
+    # Add pagination
+    paginator = Paginator(callbacks, 10)  # Show 10 callbacks per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context.update({
+        'page_obj': page_obj,
+        'callbacks': page_obj.object_list,  # Pass the paginated list
+    })
 
     return render(request, 'callbacklist.html', context)
 
