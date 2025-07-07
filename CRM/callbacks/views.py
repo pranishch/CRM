@@ -3,8 +3,8 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_protect
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from .models import Callback, UserProfile
@@ -12,11 +12,13 @@ from django.views.decorators.cache import never_cache
 from .utils import get_user_role, can_manage_users, can_edit_all_callbacks
 import re
 
+from .forms import LoginForm, CustomUserCreationForm  # Import the custom LoginForm
+
 @csrf_protect
 @never_cache
 def user_login(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request, request.POST)
+        form = LoginForm(request, request.POST)
         if form.is_valid():
             user = form.get_user()
             if user.is_active:
@@ -36,42 +38,80 @@ def user_login(request):
                         return redirect('callbacklist')
             else:
                 messages.error(request, 'Your account is inactive. Please contact administrator.')
+        else:
+            messages.error(request, 'Invalid username/email or password.')
     else:
-        form = AuthenticationForm()
+        form = LoginForm()
+    
+    # Ensure form fields are empty on GET request
+    if request.method == 'GET':
+        form.fields['username'].initial = ''
+        form.fields['password'].initial = ''
+    
     return render(request, 'login.html', {'form': form})
 
 @login_required
-def user_logout(request):
-    auth.logout(request)
-    messages.success(request, 'Logged out successfully.')
-    return redirect('login')
-
-@login_required
-@never_cache
-# @permission_required('auth.manage_users', raise_exception=True)
-def admin_dashboard(request):
+@csrf_protect
+def manage_users(request):
     if not (request.user.is_superuser or 
             (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
         messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('admin_dashboard')
-    
-    if not request.user.has_perm('auth.manage_users'):
-        messages.error(request, 'Access denied. You lack the required permissions.')
         return redirect('callbacklist')
     
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        user_id = request.POST.get('user_id')
+        
+        if action == 'create':
+            form = CustomUserCreationForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                role = request.POST.get('role', 'agent')
+                UserProfile.objects.create(user=user, role=role)
+                try:
+                    group = Group.objects.get(name=role.capitalize())
+                    user.groups.add(group)
+                except Group.DoesNotExist:
+                    pass
+                messages.success(request, f'User {user.username} created successfully with role {role}!')
+            else:
+                for error in form.errors.values():
+                    messages.error(request, error)
+        
+        elif action == 'change_role':
+            user = get_object_or_404(User, id=user_id)
+            new_role = request.POST.get('new_role')
+            user.groups.clear()
+            if new_role in ['agent', 'manager', 'admin']:
+                try:
+                    group = Group.objects.get(name=new_role.capitalize())
+                    user.groups.add(group)
+                except Group.DoesNotExist:
+                    pass
+                profile, created = UserProfile.objects.get_or_create(user=user)
+                profile.role = new_role
+                profile.save()
+                messages.success(request, f'User {user.username} role changed to {new_role}.')
+        
+        elif action == 'reset_password':
+            user = get_object_or_404(User, id=user_id)
+            new_password = request.POST.get('new_password')
+            user.set_password(new_password)
+            user.save()
+            messages.success(request, f'Password reset for {user.username}!')
+        
+        return redirect('manage_users')
+    
     users = User.objects.all().prefetch_related('userprofile', 'groups')
-    total_callbacks = Callback.objects.count()
-    total_users = User.objects.count()
-    total_managers = User.objects.filter(userprofile__role='manager').count()
+    form = CustomUserCreationForm()
     
     context = {
         'users': users,
-        'total_callbacks': total_callbacks,
-        'total_users': total_users,
-        'total_managers': total_managers,
+        'roles': ['agent', 'manager', 'admin'],
+        'form': form,
         'user_role': 'admin',
     }
-    return render(request, 'admin_dashboard.html', context)
+    return render(request, 'manage_users.html', context)
 
 @login_required
 @csrf_protect
@@ -86,7 +126,7 @@ def manage_managers(request):
         user_id = request.POST.get('user_id')
         
         if action == 'create':
-            form = UserCreationForm(request.POST)
+            form = CustomUserCreationForm(request.POST)
             if form.is_valid():
                 user = form.save()
                 role = request.POST.get('role', 'manager')
@@ -126,7 +166,7 @@ def manage_managers(request):
         return redirect('manage_managers')
     
     managers = User.objects.filter(userprofile__role='manager').prefetch_related('userprofile', 'groups')
-    form = UserCreationForm()
+    form = CustomUserCreationForm()
     
     context = {
         'managers': managers,
@@ -135,6 +175,39 @@ def manage_managers(request):
         'user_role': 'admin',
     }
     return render(request, 'manage_managers.html', context)
+
+@login_required
+def user_logout(request):
+    auth.logout(request)
+    messages.success(request, 'Logged out successfully.')
+    return redirect('login')
+
+@login_required
+@never_cache
+# @permission_required('auth.manage_users', raise_exception=True)
+def admin_dashboard(request):
+    if not (request.user.is_superuser or 
+            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('admin_dashboard')
+    
+    if not request.user.has_perm('auth.manage_users'):
+        messages.error(request, 'Access denied. You lack the required permissions.')
+        return redirect('callbacklist')
+    
+    users = User.objects.all().prefetch_related('userprofile', 'groups')
+    total_callbacks = Callback.objects.count()
+    total_users = User.objects.count()
+    total_managers = User.objects.filter(userprofile__role='manager').count()
+    
+    context = {
+        'users': users,
+        'total_callbacks': total_callbacks,
+        'total_users': total_users,
+        'total_managers': total_managers,
+        'user_role': 'admin',
+    }
+    return render(request, 'admin_dashboard.html', context)
 
 @login_required
 @csrf_protect
@@ -190,11 +263,6 @@ def manager_dashboard(request, manager_id):
     }
     return render(request, 'manager_dashboard.html', context)
 
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib import messages
-from .models import User, Callback  # Adjust imports based on your actual models
 
 @login_required
 @csrf_protect
@@ -398,65 +466,4 @@ def delete_user(request, user_id):
     messages.success(request, f'User {username} deleted successfully.')
     return redirect(request.META.get('HTTP_REFERER', 'manage_users'))
 
-@login_required
-@csrf_protect
-def manage_users(request):
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('callbacklist')
-    
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        user_id = request.POST.get('user_id')
-        
-        if action == 'create':
-            form = UserCreationForm(request.POST)
-            if form.is_valid():
-                user = form.save()
-                role = request.POST.get('role', 'agent')
-                UserProfile.objects.create(user=user, role=role)
-                try:
-                    group = Group.objects.get(name=role.capitalize())
-                    user.groups.add(group)
-                except Group.DoesNotExist:
-                    pass
-                messages.success(request, f'User {user.username} created successfully with role {role}!')
-            else:
-                for error in form.errors.values():
-                    messages.error(request, error)
-        
-        elif action == 'change_role':
-            user = get_object_or_404(User, id=user_id)
-            new_role = request.POST.get('new_role')
-            user.groups.clear()
-            if new_role in ['agent', 'manager', 'admin']:
-                try:
-                    group = Group.objects.get(name=new_role.capitalize())
-                    user.groups.add(group)
-                except Group.DoesNotExist:
-                    pass
-                profile, created = UserProfile.objects.get_or_create(user=user)
-                profile.role = new_role
-                profile.save()
-                messages.success(request, f'User {user.username} role changed to {new_role}.')
-        
-        elif action == 'reset_password':
-            user = get_object_or_404(User, id=user_id)
-            new_password = request.POST.get('new_password')
-            user.set_password(new_password)
-            user.save()
-            messages.success(request, f'Password reset for {user.username}!')
-        
-        return redirect('manage_users')
-    
-    users = User.objects.all().prefetch_related('userprofile', 'groups')
-    form = UserCreationForm()
-    
-    context = {
-        'users': users,
-        'roles': ['agent', 'manager', 'admin'],
-        'form': form,
-        'user_role': 'admin',
-    }
-    return render(request, 'manage_users.html', context)
+

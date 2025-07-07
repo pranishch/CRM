@@ -354,7 +354,7 @@
     </div>
 
     <!-- Create User Modal -->
-    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby.createUserModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -365,7 +365,42 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="create">
                     <div class="modal-body">
-                        {{ form.as_p }}
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.username.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password1.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password2.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
                         <input type="hidden" name="role" value="agent">
                     </div>
                     <div class="modal-footer">
