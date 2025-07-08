@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 from django.db.models import Q
+from datetime import datetime
 from .models import Callback, UserProfile
 from django.views.decorators.cache import never_cache
 from .utils import get_user_role, can_manage_users, can_edit_all_callbacks
@@ -305,7 +306,7 @@ def view_user_callbacks(request, user_id):
         return redirect('callbacklist')
 
     if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
-        callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
+        callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
         can_edit = True
     elif hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'manager':
         if hasattr(target_user, 'userprofile') and target_user.userprofile.role != 'agent':
@@ -314,13 +315,13 @@ def view_user_callbacks(request, user_id):
         if target_user.userprofile.manager != current_user:
             messages.error(request, 'Access denied. You can only view callbacks of your assigned agents.')
             return redirect('manager_dashboard', manager_id=current_user.id)
-        callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
+        callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
         can_edit = False
     else:
         if current_user != target_user:
             messages.error(request, 'Access denied.')
             return redirect('callbacklist')
-        callbacks = Callback.objects.filter(created_by=current_user).order_by('-created_at')
+        callbacks = Callback.objects.filter(created_by=current_user).order_by('-added_at')
         can_edit = True
     
     # Add pagination
@@ -363,7 +364,7 @@ def callbacklist(request, user_id=None):
             messages.error(request, 'Access denied. You can only view your own callbacks.')
             return redirect('callbacklist')  # Redirect to the logged-in user's callback list
         # Filter callbacks where the user is either the creator or assigned
-        callbacks = Callback.objects.filter(created_by=target_user).order_by('-created_at')
+        callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
         context.update({
             'is_viewing_other': True,
             'target_user': target_user,
@@ -372,10 +373,10 @@ def callbacklist(request, user_id=None):
         # General callback list
         if user_role == 'agent':
             # Agents see only their own callbacks
-            callbacks = Callback.objects.filter(created_by=request.user).order_by('-created_at')
+            callbacks = Callback.objects.filter(created_by=request.user).order_by('-added_at')
         else:
             # Admins and managers see all callbacks
-            callbacks = Callback.objects.all().order_by('-created_at')
+            callbacks = Callback.objects.all().order_by('-added_at')
         context.update({
             'is_viewing_other': False,
         })
@@ -455,6 +456,16 @@ def save_callbacks(request):
             if notes and len(notes) > 255:
                 raise ValidationError("Notes must not exceed 255 characters")
             
+            added_at_list = request.POST.getlist('added_at')
+            added_at = added_at_list[i].strip() if i < len(added_at_list) and added_at_list[i].strip() else None
+            try:
+                if added_at:
+                    added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S')
+                else:
+                    added_at = datetime.now()
+            except (ValueError, TypeError):
+                added_at = datetime.now()
+            
             Callback.objects.create(
                 customer_name=name,
                 address=address,
@@ -463,7 +474,8 @@ def save_callbacks(request):
                 remarks=remarks,
                 notes=notes,
                 is_completed=is_completed,
-                created_by=callback_owner
+                created_by=callback_owner,
+                added_at=added_at
             )
             saved_count += 1
         

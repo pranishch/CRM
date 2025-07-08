@@ -10,6 +10,7 @@ class Callback(models.Model):
     notes = models.TextField(max_length=255, blank=True, null=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='callbacks_created', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    added_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
     is_completed = models.BooleanField(default=False)
 

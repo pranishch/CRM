@@ -371,6 +371,7 @@
                                 <th style="width: 15%">Website</th>
                                 <th style="width: 20%">Remarks</th>
                                 <th style="width: 20%">Notes</th>
+                                <th style="width: 10%">Date</th>
                                 {% if request.user.is_superuser %}
                                     <th style="width: 5%">Actions</th>
                                 {% endif %}
@@ -381,28 +382,28 @@
                             <tr>
                                 <td>
                                     <input type="text" name="customer_name" 
-                                           class="form-control editable name-input" 
-                                           value="{{ callback.customer_name|default_if_none:'' }}" 
-                                           maxlength="100" 
-                                           pattern="[A-Za-z\s]+" 
-                                           title="Only alphabetical characters allowed" 
-                                           {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>
+                                        class="form-control editable name-input" 
+                                        value="{{ callback.customer_name|default_if_none:'' }}" 
+                                        maxlength="100" 
+                                        pattern="[A-Za-z\s]+" 
+                                        title="Only alphabetical characters allowed" 
+                                        {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>
                                 </td>
                                 <td>
                                     <textarea name="address" 
-                                              class="form-control editable address-input" 
-                                              rows="1" 
-                                              maxlength="255" 
-                                              {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>{{ callback.address|default_if_none:'' }}</textarea>
+                                            class="form-control editable address-input" 
+                                            rows="1" 
+                                            maxlength="255" 
+                                            {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>{{ callback.address|default_if_none:'' }}</textarea>
                                 </td>
                                 <td>
                                     <input type="text" name="phone_number" 
-                                           class="form-control editable phone-input" 
-                                           value="{{ callback.phone_number|default_if_none:'' }}" 
-                                           pattern="[\+\-\(\),./#0-9\s]+" 
-                                           title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
-                                           maxlength="20" 
-                                           {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>
+                                        class="form-control editable phone-input" 
+                                        value="{{ callback.phone_number|default_if_none:'' }}" 
+                                        pattern="[\+\-\(\),./#0-9\s]+" 
+                                        title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
+                                        maxlength="20" 
+                                        {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>
                                 </td>
                                 <td>
                                     <input type="url" name="website" 
@@ -415,8 +416,8 @@
                                 </td>
                                 <td>
                                     <select name="remarks" 
-                                            class="form-control editable" 
-                                            {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>
+                                        class="form-control editable" 
+                                        {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>
                                         <option value="" {% if not callback.remarks %}selected{% endif %}>Select</option>
                                         <option value="Interested" {% if callback.remarks == 'Interested' %}selected{% endif %}>Interested</option>
                                         <option value="Call Back Later" {% if callback.remarks == 'Call Back Later' %}selected{% endif %}>Call Back Later</option>
@@ -436,11 +437,18 @@
                                             {% if not can_edit_all and callback.created_by != user %}disabled{% endif %}>{{ callback.notes|default_if_none:'' }}</textarea>
                                 </td>
                                 <td>
+                                    <input type="hidden" name="added_at" class="added-at-input" value="{{ callback.added_at|date:'Y-m-d H:i:s' }}">
+                                    <input type="text" 
+                                        class="form-control added-at-display" 
+                                        value="{{ callback.added_at|date:'Y-m-d H:i:s' }}" 
+                                        disabled>
+                                </td>
+                                <td>
                                     <div class="action-buttons">
                                         {% if user_role == 'admin' %}
                                         <a href="{% url 'delete_callback' callback.id %}" 
-                                           class="btn btn-sm btn-danger" 
-                                           onclick="return confirm('Are you sure you want to delete this callback?')">
+                                        class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Are you sure you want to delete this callback?')">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                         {% endif %}
@@ -451,26 +459,26 @@
                             <tr class="new-entry-row">
                                 <td>
                                     <input type="text" name="customer_name" 
-                                           class="form-control editable name-input" 
-                                           placeholder="" 
-                                           maxlength="100" 
-                                           pattern="[A-Za-z\s]+" 
-                                           title="Only alphabetical characters allowed">
+                                        class="form-control editable name-input" 
+                                        placeholder="" 
+                                        maxlength="100" 
+                                        pattern="[A-Za-z\s]+" 
+                                        title="Only alphabetical characters allowed">
                                 </td>
                                 <td>
                                     <textarea name="address" 
-                                              class="form-control editable address-input" 
-                                              rows="1" 
-                                              placeholder="" 
-                                              maxlength="255"></textarea>
+                                            class="form-control editable address-input" 
+                                            rows="1" 
+                                            placeholder="" 
+                                            maxlength="255"></textarea>
                                 </td>
                                 <td>
                                     <input type="text" name="phone_number" 
-                                           class="form-control editable phone-input" 
-                                           placeholder="" 
-                                           pattern="[\+\-\(\),./#0-9\s\]+" 
-                                           title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
-                                           maxlength="20">
+                                        class="form-control editable phone-input" 
+                                        placeholder="" 
+                                        pattern="[\+\-\(\),./#0-9\s]+" 
+                                        title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
+                                        maxlength="20">
                                 </td>
                                 <td>
                                     <input type="url" name="website" 
@@ -499,6 +507,13 @@
                                             rows="1" 
                                             placeholder="" 
                                             maxlength="255"></textarea>
+                                </td>
+                                <td>
+                                    <input type="hidden" name="added_at" class="added-at-input" value="">
+                                    <input type="text" 
+                                        class="form-control added-at-display" 
+                                        value="" 
+                                        disabled>
                                 </td>
                                 <td class="center-cell">
                                     <button type="button" class="btn btn-sm btn-success add-row-btn">
@@ -546,15 +561,33 @@
                             <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
                     </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-    </div>
-
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+        
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Function to set added_at timestamp for a row
+            function setAddedAtTimestamp(row) {
+                const addedAtInput = row.querySelector('.added-at-input');
+                const addedAtDisplay = row.querySelector('.added-at-display');
+                if (addedAtInput && !addedAtInput.value) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const seconds = String(now.getSeconds()).padStart(2, '0');
+                    const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                    addedAtInput.value = timestamp;
+                    addedAtDisplay.value = timestamp;
+                }
+            }
+
             // Save button functionality
             document.getElementById('saveData').addEventListener('click', function() {
                 document.getElementById('callbackForm').submit();
@@ -568,6 +601,8 @@
                 inputs.forEach(input => {
                     if (input.tagName === 'SELECT') {
                         input.value = '';
+                    } else if (input.classList.contains('added-at-input') || input.classList.contains('added-at-display')) {
+                        input.value = '';
                     } else {
                         input.value = '';
                     }
@@ -580,7 +615,16 @@
                 const lastRow = tableBody.lastElementChild;
                 tableBody.insertBefore(newRow, lastRow);
                 
+                setAddedAtTimestamp(newRow); // Set timestamp for the new row
                 newRow.querySelector('input').focus();
+            });
+            
+            // Set timestamp when any input in the new row is edited
+            document.querySelectorAll('.new-entry-row .editable').forEach(input => {
+                input.addEventListener('input', function() {
+                    const row = input.closest('.new-entry-row');
+                    setAddedAtTimestamp(row);
+                });
             });
             
             // Form validation
@@ -599,14 +643,14 @@
                     }
                 });
                 
-               (phoneInputs.forEach(input => {
+                phoneInputs.forEach(input => {
                     if (input.value.trim() === '' && !input.disabled) {
                         input.classList.add('is-invalid');
                         isValid = false;
                     } else {
                         input.classList.remove('is-invalid');
                     }
-                }));
+                });
                 
                 websiteInputs.forEach(input => {
                     if (input.value.trim() !== '' && !input.disabled) {
@@ -642,5 +686,6 @@
             }
         });
     </script>
+
 </body>
 </html>
