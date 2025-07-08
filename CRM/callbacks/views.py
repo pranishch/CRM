@@ -345,7 +345,7 @@ def view_user_callbacks(request, user_id):
             callbacks = callbacks.filter(phone_number__icontains=search_query)
 
     # Add pagination
-    paginator = Paginator(callbacks, 10)  # Show 10 callbacks per page
+    paginator = Paginator(callbacks, 20)  # Show 20 callbacks per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -523,16 +523,39 @@ def save_callbacks(request):
             )
             saved_count += 1
         
-        return JsonResponse({
-            'status': 'success', 
-            'message': f'Saved {saved_count} entries',
-            'saved_count': saved_count
-        })
+        # If it's an AJAX request, return JSON
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Saved {saved_count} entries',
+                'saved_count': saved_count
+            })
+        # Otherwise, redirect with a success message
+        else:
+            messages.success(request, f'Saved {saved_count} entries')
+            if target_user_id and can_edit_all:
+                return redirect('view_user_callbacks', user_id=target_user_id)
+            else:
+                return redirect('callbacklist')
         
     except ValidationError as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        else:
+            messages.error(request, str(e))
+            if target_user_id and can_edit_all:
+                return redirect('view_user_callbacks', user_id=target_user_id)
+            else:
+                return redirect('callbacklist')
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=400)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=400)
+        else:
+            messages.error(request, f'Error: {str(e)}')
+            if target_user_id and can_edit_all:
+                return redirect('view_user_callbacks', user_id=target_user_id)
+            else:
+                return redirect('callbacklist')
 
 @login_required
 @csrf_protect

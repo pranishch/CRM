@@ -343,6 +343,16 @@
                 {% endfor %}
             {% endif %}
             
+            <!-- Toast Container -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+                <div id="saveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body"></div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">
                     <i class="bi bi-table me-2"></i>
@@ -602,10 +612,94 @@
                 }
             }
 
-            // Save button functionality
-            document.getElementById('saveData').addEventListener('click', function() {
-                document.getElementById('callbackForm').submit();
-            });
+            // Show toast notification
+            function showToast(message, type) {
+                const toastEl = document.getElementById('saveToast');
+                const toastBody = toastEl.querySelector('.toast-body');
+                toastBody.textContent = message;
+                toastEl.classList.remove('bg-success', 'bg-danger');
+                toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
+
+            // Save button functionality with AJAX
+            const saveButton = document.getElementById('saveData');
+            if (saveButton) {
+                saveButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const form = document.getElementById('callbackForm');
+                    
+                    // Form validation
+                    const nameInputs = form.querySelectorAll('.name-input');
+                    const phoneInputs = form.querySelectorAll('.phone-input');
+                    const websiteInputs = form.querySelectorAll('.website-input');
+                    let isValid = true;
+                    
+                    nameInputs.forEach(input => {
+                        if (input.value.trim() === '' && !input.disabled) {
+                            input.classList.add('is-invalid');
+                            isValid = false;
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    phoneInputs.forEach(input => {
+                        if (input.value.trim() === '' && !input.disabled) {
+                            input.classList.add('is-invalid');
+                            isValid = false;
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    websiteInputs.forEach(input => {
+                        if (input.value.trim() !== '' && !input.disabled) {
+                            const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/;
+                            if (!urlPattern.test(input.value.trim())) {
+                                input.classList.add('is-invalid');
+                                isValid = false;
+                            } else {
+                                input.classList.remove('is-invalid');
+                            }
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        showToast('Please fill in all required fields (Customer Name and Phone Number) and ensure Website fields contain valid URLs for editable rows.', 'danger');
+                        return;
+                    }
+
+                    // Send AJAX request
+                    const formData = new FormData(form);
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showToast(data.message, 'success');
+                            // Optionally refresh the page to show updated data
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            showToast(data.message, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('An error occurred while saving. Please try again.', 'danger');
+                    });
+                });
+            }
             
             // Add new row functionality
             document.querySelector('.add-row-btn').addEventListener('click', function() {
