@@ -272,6 +272,21 @@
                     Callbacks for {{ target_user.username }}
                     <small class="text-muted">({{ callbacks.count }} total)</small>
                 </h2>
+                <div class="d-flex align-items-center gap-2"></div>
+                    <form class="d-flex" method="GET" action="{% url 'view_user_callbacks' user_id=target_user.id %}">
+                        <select name="search_field" class="form-control me-2" style="width: 150px;">
+                            <option value="all" {% if search_field == 'all' %}selected{% endif %}>All</option>
+                            <option value="customer_name" {% if search_field == 'customer_name' %}selected{% endif %}>Customer Name</option>
+                            <option value="phone_number" {% if search_field == 'phone_number' %}selected{% endif %}>Phone Number</option>
+                            <!-- <option value="address" {% if search_field == 'address' %}selected{% endif %}>Address</option> -->
+                            <!-- <option value="website" {% if search_field == 'website' %}selected{% endif %}>Website</option> -->
+
+                        </select>
+                        <input type="text" name="q" class="form-control me-2" placeholder="Search..." value="{{ search_query|default_if_none:'' }}" style="width: 200px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </form>
                 {% if can_edit %}
                 <div class="action-buttons">
                     <button class="btn btn-primary" id="saveData">

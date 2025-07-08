@@ -304,6 +304,10 @@ def view_user_callbacks(request, user_id):
     if current_user != target_user and not (current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role in ['admin', 'manager'])):
         messages.error(request, 'Access denied. You can only view your own callbacks.')
         return redirect('callbacklist')
+    
+    # Get search parameters
+    search_query = request.GET.get('q', '').strip()
+    search_field = request.GET.get('search_field', 'customer_name')
 
     if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
         callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
@@ -324,6 +328,22 @@ def view_user_callbacks(request, user_id):
         callbacks = Callback.objects.filter(created_by=current_user).order_by('-added_at')
         can_edit = True
     
+    # Apply search filter
+    if search_query:
+        if search_field == 'all':
+            callbacks = callbacks.filter(
+                Q(customer_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(address__icontains=search_query) |
+                Q(website__icontains=search_query) |
+                Q(remarks__icontains=search_query) |
+                Q(notes__icontains=search_query)
+            )
+        elif search_field == 'customer_name':
+            callbacks = callbacks.filter(customer_name__icontains=search_query)
+        elif search_field == 'phone_number':
+            callbacks = callbacks.filter(phone_number__icontains=search_query)
+
     # Add pagination
     paginator = Paginator(callbacks, 10)  # Show 10 callbacks per page
     page_number = request.GET.get('page')
@@ -336,6 +356,8 @@ def view_user_callbacks(request, user_id):
         'can_edit': can_edit,
         'is_viewing_other': current_user != target_user,
         'user_role': getattr(current_user.userprofile, 'role', 'agent') if hasattr(current_user, 'userprofile') else 'agent',
+        'search_query': search_query,
+        'search_field': search_field,
     }
     return render(request, 'view_user_callbacklist.html', context)
 
@@ -347,6 +369,9 @@ def callbacklist(request, user_id=None):
     can_manage = can_manage_users(request.user)
     can_edit_all = can_edit_all_callbacks(request.user)
     can_delete = can_edit_all  # Assuming delete permission aligns with edit_all
+    # Get search parameters
+    search_query = request.GET.get('q', '').strip()
+    search_field = request.GET.get('search_field', 'customer_name')  # Default to customer_name
 
     # Initialize context
     context = {
@@ -354,6 +379,8 @@ def callbacklist(request, user_id=None):
         'can_manage_users': can_manage,
         'can_edit_all': can_edit_all,
         'can_delete': can_delete,
+        'search_query': search_query,
+        'search_field': search_field,
     }
 
     if user_id:
@@ -381,8 +408,25 @@ def callbacklist(request, user_id=None):
             'is_viewing_other': False,
         })
 
+    # Apply search filter
+    if search_query:
+        if search_field == 'all':
+            callbacks = callbacks.filter(
+                Q(customer_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(address__icontains=search_query) |
+                Q(website__icontains=search_query) |
+                Q(remarks__icontains=search_query) |
+                Q(notes__icontains=search_query)
+            )
+        elif search_field == 'customer_name':
+            callbacks = callbacks.filter(customer_name__icontains=search_query)
+        elif search_field == 'phone_number':
+            callbacks = callbacks.filter(phone_number__icontains=search_query)
+       
+
     # Add pagination
-    paginator = Paginator(callbacks, 10)  # Show 10 callbacks per page
+    paginator = Paginator(callbacks, 20)  # Show 20 callbacks per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -491,15 +535,18 @@ def save_callbacks(request):
         return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=400)
 
 @login_required
+@csrf_protect
+@never_cache
 def delete_callback(request, callback_id):
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied. Only superusers can delete callbacks.')
+        return redirect('callbacklist')
+    
     callback = get_object_or_404(Callback, id=callback_id)
-    
-    if not (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin'):
-        raise PermissionDenied("You don't have permission to delete this callback")
-    
+    user_id = callback.created_by.id  # Get the user_id from the callback's created_by field
     callback.delete()
     messages.success(request, 'Callback deleted successfully.')
-    return redirect('callbacklist')
+    return redirect('callbacklist_with_user', user_id=user_id)
 
 @login_required
 @csrf_protect
