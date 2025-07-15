@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.contrib.auth.password_validation import validate_password, MinimumLengthValidator, NumericPasswordValidator
 from .models import UserProfile
 
 class LoginForm(AuthenticationForm):
@@ -88,3 +89,32 @@ class CustomUserCreationForm(UserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("This email address is already in use.")
         return email
+    
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        validators = [
+            MinimumLengthValidator(),
+            NumericPasswordValidator(),
+        ]
+        try:
+            for validator in validators:
+                validator.validate(password1, self.instance)
+        except forms.ValidationError as error:
+            raise error
+        return password1
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("The two password fields didn’t match.")
+        validators = [
+            MinimumLengthValidator(),
+            NumericPasswordValidator(),
+        ]
+        try:
+            for validator in validators:
+                validator.validate(password2, self.instance)
+        except forms.ValidationError as error:
+            raise error
+        return password2

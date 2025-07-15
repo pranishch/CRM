@@ -27,6 +27,7 @@ class Command(BaseCommand):
                 'Manager': [
                     ('view_callback', callback_content_type),
                     ('view_all_callbacks', callback_content_type),
+                    ('edit_all_callbacks', callback_content_type),
                 ],
                 'Admin': [
                     ('add_callback', callback_content_type),

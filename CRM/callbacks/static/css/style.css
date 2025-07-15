@@ -1,0 +1,379 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: white;
+  color: navy;
+}
+
+.login-container {
+  display: flex;
+  background-color: navy;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.login-left {
+  flex: 1;
+  background: linear-gradient(135deg, orange, darkorange);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-left h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  letter-spacing: 5px;
+  font-weight: 900;
+}
+
+.login-left p {
+  font-size: 1.2rem;
+  max-width: 320px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.login-right {
+  flex: 1;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 3rem;
+  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-form h2 {
+  margin-bottom: 2rem;
+  color: navy;
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.login-form label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: gray;
+}
+
+.login-form input,
+.login-form select {
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 5px;
+  border: 1.5px solid lightgray;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.login-form input:focus,
+.login-form select:focus {
+  outline: none;
+  border-color: orange;
+  box-shadow: 0 0 6px rgba(255, 165, 0, 0.5);
+}
+
+.btn {
+  background-color: orange;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  white-space: nowrap;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn:hover {
+  background-color: darkorange;
+  box-shadow: 0 6px 16px rgba(255, 140, 0, 0.4);
+}
+
+select,
+input[type='text'] {
+  padding: 0.4rem;
+  border-radius: 5px;
+  border: 1px solid lightgray;
+}
+
+.input-error {
+  color: red;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  min-height: 1.25rem;
+  display: none;
+  font-weight: 600;
+}
+
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 2rem 3rem;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.main-content header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.main-content header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: navy;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info span {
+  font-weight: 600;
+  color: slategray;
+}
+
+.btn-logout {
+  background-color: #6b7280;
+  border: none;
+  padding: 0.5rem 1.1rem;
+  color: white;
+  font-weight: 700;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 1rem;
+  user-select: none;
+  box-shadow: 0 4px 10px rgba(107, 114, 128, 0.6);
+}
+
+.btn-logout:hover {
+  background-color: #4b5563;
+  box-shadow: 0 6px 15px rgba(75, 85, 99, 0.7);
+}
+
+section {
+  background: orange;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(30, 144, 255, 0.15);
+  padding: 2rem;
+  margin-bottom: 3rem;
+}
+
+section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: navy;
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: 0.5px;
+}
+
+.create-btn {
+  background-color: navy;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(30, 144, 255, 0.35);
+  transition: background-color 0.3s ease;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  user-select: none;
+}
+
+.create-btn:hover {
+  background-color: royalblue;
+}
+
+.actions span {
+  color: blue;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 5px;
+  margin-right: 0.7rem;
+  transition: background-color 0.2s ease;
+  border: 1px solid transparent;
+  display: inline-block;
+}
+
+.actions span:hover {
+  border-color: blue;
+  text-decoration: none;
+}
+
+.user-profile-box {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(30, 144, 255, 0.15);
+  margin-bottom: 2rem;
+}
+
+.booking-section {
+  display: none;
+}
+
+.booking-section.active {
+  display: block;
+}
+
+.card {
+  background: aliceblue;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.btn-action {
+  color: blue;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 5px;
+  margin-right: 0.7rem;
+  transition: background-color 0.2s ease;
+  border: 1px solid transparent;
+  display: inline-block;
+  background: none;
+  font-size: 1rem;
+  font-family: inherit;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  border: none;
+}
+
+.btn-action:hover,
+.btn-action:focus {
+  border-color: blue;
+  text-decoration: none;
+}
+
+.btn-back {
+  background-color: navy;
+  color: white;
+  padding: 0.6rem 1.4rem;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(30, 144, 255, 0.3);
+  transition: background-color 0.3s ease;
+}
+
+.btn-back:hover {
+  background-color: blue;
+}
+
+.login-image {
+  width: 320px;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 1rem 1.5rem;
+    width: 100%;
+  }
+
+  .main-content > header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .main-content header h1 {
+    font-size: 1.8rem;
+  }
+
+  .user-info {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-left,
+  .login-right {
+    flex: none;
+    width: 100%;
+    padding: 2rem 1.5rem;
+  }
+
+  .login-left h1 {
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+  }
+
+  .login-left p {
+    max-width: 100%;
+    font-size: 1rem;
+  }
+
+  .login-right {
+    padding: 2rem 1.5rem;
+    box-shadow: none;
+  }
+
+  .login-form {
+    max-width: 100%;
+  }
+}

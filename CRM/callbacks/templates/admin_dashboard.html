@@ -6,78 +6,316 @@
     <title>Admin Dashboard | Callback System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4e73df;
+            --primary-color: orange;
             --secondary-color: #f8f9fc;
             --accent-color: #2e59d9;
             --admin-color: #dc3545;
             --manager-color: #ffc107;
             --agent-color: #28a745;
+            --text-dark: #2c3e50;
+            --shadow: 0 4px 12px rgba(0,0,0,0.15);
+            --border-radius: 10px;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-            overflow-x: hidden;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #e8ecef 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 2rem;
         }
         .navbar {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
+            background: linear-gradient(to right, orange, #34495e);
+            transition: all 0.3s ease;
         }
-        .navbar-brand, .nav-link {
-            transition: color 0.3s ease;
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff !important;
+            transition: transform 0.2s ease;
         }
-        .navbar-brand:hover, .nav-link:hover {
-            color: var(--accent-color) !important;
-        }
-        .stats-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .stats-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-        }
-        .stats-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            transition: transform 0.3s ease;
-        }
-        .stats-card:hover .stats-icon {
-            transform: scale(1.1);
+        .navbar-brand:hover {
+            transform: scale(1.05);
         }
         .main-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 1400px;
+            animation: fadeIn 0.5s ease-in-out;
         }
-        .user-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             transition: all 0.3s ease;
+            width: 100%;
         }
-        .user-card:hover {
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            transform: translateY(-4px);
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            padding: 1rem 1.5rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .table {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table td {
+            vertical-align: middle;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        #allCallbacksTable .table {
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+        #allCallbacksTable .table th {
+            background: linear-gradient(to bottom, var(--primary-color), #e67e22);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+            padding: 0.8rem;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+        }
+        #allCallbacksTable .table td {
+            transition: background-color 0.2s ease;
+            font-size: 0.85rem;
+            padding: 0.6rem;
+        }
+        #allCallbacksTable .table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        #allCallbacksTable .table tbody tr:hover {
+            background-color: #e9ecef;
+            cursor: default;
+        }
+        #allCallbacksTable .table td:not(:last-child) {
+            border-right: 1px solid #e9ecef;
+        }
+        #allCallbacksTable .table-responsive {
+            max-height: 500px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border-radius: var(--border-radius);
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) #f1f1f1;
+        }
+        #allCallbacksTable .table-responsive::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        #allCallbacksTable .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        #allCallbacksTable .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        #allCallbacksTable .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #e67e22;
+        }
+        #allCallbacksTable .table th:nth-child(1), #allCallbacksTable .table td:nth-child(1) { /* Customer Name */
+            width: 12%;
+            min-width: 120px;
+        }
+        #allCallbacksTable .table th:nth-child(2), #allCallbacksTable .table td:nth-child(2) { /* Phone Number */
+            width: 10%;
+            min-width: 100px;
+        }
+        #allCallbacksTable .table th:nth-child(3), #allCallbacksTable .table td:nth-child(3) { /* Email */
+            width: 12%;
+            min-width: 120px;
+        }
+        #allCallbacksTable .table th:nth-child(4), #allCallbacksTable .table td:nth-child(4) { /* Address */
+            width: 12%;
+            min-width: 120px;
+        }
+        #allCallbacksTable .table th:nth-child(5), #allCallbacksTable .table td:nth-child(5) { /* Website */
+            width: 10%;
+            min-width: 100px;
+        }
+        #allCallbacksTable .table th:nth-child(6), #allCallbacksTable .table td:nth-child(6) { /* Remarks */
+            width: 10%;
+            min-width: 100px;
+        }
+        #allCallbacksTable .table th:nth-child(7), #allCallbacksTable .table td:nth-child(7) { /* Notes */
+            width: 10%;
+            min-width: 100px;
+        }
+        #allCallbacksTable .table th:nth-child(8), #allCallbacksTable .table td:nth-child(8) { /* Assigned Manager */
+            width: 13.5%;
+            min-width: 120px;
+        }
+        #allCallbacksTable .table th:nth-child(9), #allCallbacksTable .table td:nth-child(9) { /* Created By */
+            width: 8%;
+            min-width: 100px;
+        }
+        #allCallbacksTable .table th:nth-child(10), #allCallbacksTable .table td:nth-child(10) { /* Actions */
+            width: 12%;
+            min-width: 120px;
+        }
+        @media (min-width: 992px) {
+            #allCallbacksTable .table {
+                table-layout: fixed;
+            }
+            #allCallbacksTable .table td {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        @media (max-width: 992px) {
+            .main-container {
+                margin: 1rem auto;
+                padding: 1.5rem;
+            }
+            .card {
+                margin-bottom: 1.5rem;
+            }
+            .card-header {
+                padding: 0.75rem 1rem;
+            }
+            .card-body {
+                padding: 1rem;
+            }
+            .table th, .table td {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+            .action-buttons .btn-action {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            .system-overview .card {
+                flex: 1 1 100%;
+            }
+            #allCallbacksTable .table-responsive {
+                max-height: 400px;
+            }
+        }
+        @media (max-width: 768px) {
+            .table-responsive {
+                border: none;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .table {
+                min-width: 900px;
+            }
+            .card-header {
+                padding: 0.5rem 0.75rem;
+            }
+            .card-body {
+                padding: 0.75rem;
+            }
+            .action-buttons .btn-action {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            .navbar-nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            #allCallbacksTable .table-responsive {
+                max-height: 350px;
+            }
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+            .form-control, .form-select {
+                font-size: 0.9rem;
+            }
+        }
+        @media (max-width: 576px) {
+            .table th, .table td {
+                font-size: 0.8rem;
+                padding: 0.4rem;
+            }
+            .card-header {
+                padding: 0.4rem 0.6rem;
+            }
+            .card-body {
+                padding: 0.6rem;
+            }
+            .action-buttons .btn-action {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+            h1, h4 {
+                font-size: 1.25rem;
+            }
+            .navbar-brand {
+                font-size: 1rem;
+            }
+            #allCallbacksTable .table-responsive {
+                max-height: 300px;
+            }
+        }
+        .table-responsive {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
         }
         .role-badge {
             font-size: 0.75rem;
-            padding: 0.25rem 0.75rem;
+            padding: 0.3rem 0.75rem;
             border-radius: 20px;
             font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+        .role-badge:hover {
+            transform: translateY(-2px);
         }
         .role-admin { background-color: var(--admin-color); color: white; }
         .role-manager { background-color: var(--manager-color); color: #333; }
@@ -87,93 +325,139 @@
             gap: 0.5rem;
             flex-wrap: wrap;
         }
-        .quick-action-btn {
-            padding: 0.5rem 1rem;
+        .btn-action {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.875rem;
             border-radius: 6px;
-            border: none;
-            font-weight: 500;
-            text-decoration: none;
             transition: all 0.3s ease;
         }
-        .quick-action-btn:hover {
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-color);
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-success {
+            background-color: var(--agent-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-info {
+            background-color: #17a2b8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-info:hover {
+            background-color: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-danger {
+            background-color: var(--admin-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .system-overview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .system-overview .card {
+            flex: 1 1 calc(50% - 0.5rem);
+            min-width: 0;
+        }
+        .manager-select {
+            width: 100%;
+            padding: 0.25rem;
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .manager-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+            transform: scale(1.01);
+        }
+        .modal-content {
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .search-bar {
+            max-width: 500px;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .search-bar select {
+            width: 160px;
+        }
+        #pagination {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            user-select: none;
+        }
+        #pagination button,
+        #pagination span.page-num {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            min-width: 32px;
+            text-align: center;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        #pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #pagination span.page-num.active {
+            background: navy;
+            color: white;
+            border-color: navy;
+            cursor: default;
+        }
+        #pagination button:not(:disabled):hover,
+        #pagination span.page-num:not(.active):hover {
+            background-color: lightblue;
+            color: #fff;
+            border-color: lightblue;
+        }
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+        .toast {
+            border-radius: 6px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        .dashboard-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            color: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .dashboard-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), transparent);
-            opacity: 0.3;
-        }
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-            transition: transform 0.3s ease;
-        }
-        .user-card:hover .user-avatar {
-            transform: rotate(360deg);
-        }
-        @media (max-width: 768px) {
-            .navbar-nav {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 1rem;
-            }
-            .stats-card {
-                margin-bottom: 1rem;
-            }
-            .quick-action-btn {
-                width: 100%;
-                text-align: center;
-            }
-            .main-container {
-                padding: 1rem;
-            }
-            .dashboard-header {
-                padding: 1rem;
-            }
-            .user-card {
-                padding: 1rem;
-            }
-        }
-        @media (max-width: 576px) {
-            .stats-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
-            }
-            .user-avatar {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
-            }
-            .dashboard-header h1 {
-                font-size: 1.5rem;
-            }
-            .main-container h4 {
-                font-size: 1.25rem;
-            }
+        .is-invalid {
+            border-color: red;
+            background-color: #fff5f5;
         }
     </style>
 </head>
@@ -189,9 +473,6 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
-                    <a class="nav-link" href="javascript:history.back()">
-                        <i class="bi bi-arrow-left me-1"></i> Back
-                    </a>
                     <div class="nav-item dropdown me-3">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-grid-3x3-gap-fill me-1"></i>
@@ -220,151 +501,157 @@
     </nav>
 
     <div class="container mt-4">
-        <div class="dashboard-header">
-            <h1 class="mb-0">
-                <i class="bi bi-shield-check me-2"></i>
+        <div class="main-container">
+            <h1 class="mb-4">
+                <i class="bi bi-speedometer2 me-2"></i>
                 Admin Dashboard
             </h1>
-            <p class="mb-0 mt-2">Manage users, callbacks, and system settings</p>
-        </div>
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-4 col-sm-12">
-                <div class="stats-card">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon" style="background-color: var(--primary-color);">
-                            <i class="bi bi-people"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h3 class="mb-0">{{ total_users }}</h3>
-                            <p class="text-muted mb-0">Total Users</p>
-                        </div>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-12">
-                <div class="stats-card">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon" style="background-color: var(--manager-color);">
-                            <i class="bi bi-telephone"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h3 class="mb-0">{{ total_callbacks }}</h3>
-                            <p class="text-muted mb-0">Total Callbacks</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-12">
-                <div class="stats-card">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon" style="background-color: var(--admin-color);">
-                            <i class="bi bi-person-gear"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h3 class="mb-0">{{ total_managers }}</h3>
-                            <p class="text-muted mb-0">Total Managers</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="main-container">
-                    <h4 class="mb-3">
-                        <i class="bi bi-lightning me-2"></i>
-                        Quick Actions
-                    </h4>
-                    <div class="row">
-                        <div class="col-md-6 col-sm-12 mb-3">
-                            <a href="{% url 'manage_users' %}" class="quick-action-btn btn btn-primary d-block text-center">
-                                <i class="bi bi-people me-2"></i>
-                                Manage Users
-                            </a>
-                        </div>
-                        <div class="col-md-6 col-sm-12 mb-3">
-                            <a href="{% url 'manage_managers' %}" class="quick-action-btn btn btn-success d-block text-center">
-                                <i class="bi bi-person-gear me-2"></i>
-                                Manage Managers
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Users List -->
-        <div class="main-container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="mb-0">
-                    <i class="bi bi-people me-2"></i>
-                    System Users
-                </h4>
-                <div>
-                    <a href="{% url 'manage_users' %}" class="btn btn-primary me-2">
-                        <i class="bi bi-person-plus me-1"></i>
-                        Add New User
-                    </a>
-                    <a href="{% url 'manage_managers' %}" class="btn btn-success">
-                        <i class="bi bi-person-gear me-1"></i>
-                        Assign Managers
-                    </a>
-                </div>
-            </div>
-            <div class="row">
-                {% for user_obj in users %}
-                <div class="col-md-6 col-sm-12 mb-3">
-                    <div class="user-card">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar">
-                                    {{ user_obj.username|first|upper }}
-                                </div>
-                                <div class="ms-3">
-                                    <h6 class="mb-1">{{ user_obj.username }}</h6>
-                                    <div class="d-flex align-items-center">
-                                        <span class="role-badge role-{{ user_obj.userprofile.role }}">
-                                            {{ user_obj.userprofile.role|title }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-2 pt-2 border-top">
-                            <small class="text-muted">
-                                <i class="bi bi-clock me-1"></i>
-                                Last login: 
-                                {% if user_obj.last_login %}
-                                    {{ user_obj.last_login|date:"M d, Y H:i" }}
-                                {% else %}
-                                    Never
-                                {% endif %}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-12">
-                    <div class="text-center py-4">
-                        <i class="bi bi-people display-1 text-muted"></i>
-                        <h5 class="mt-2">No users found</h5>
-                        <p class="text-muted">Create your first user to get started.</p>
-                    </div>
-                </div>
                 {% endfor %}
+            {% endif %}
+
+            <!-- System Overview -->
+            <div class="system-overview">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-people me-2"></i>Total Users
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ total_users }}</h5>
+                        <a href="{% url 'manage_users' %}" class="btn btn-primary">Manage Users</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-person-gear me-2"></i>Total Managers
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ total_managers }}</h5>
+                        <a href="{% url 'manage_managers' %}" class="btn btn-primary">Manage Managers</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Callbacks Table -->
+            <div id="allCallbacksTable">
+                <div class="mb-4">
+                    <h4 class="mb-3">
+                        <i class="bi bi-telephone me-2"></i>
+                        All Callbacks
+                        <small class="text-muted">({{ total_callbacks }} callbacks)</small>
+                    </h4>
+                    <div class="search-bar">
+                        <select id="searchField" class="form-control">
+                            <option value="all" {% if search_field == 'all' %}selected{% endif %}>All Fields</option>
+                            <option value="customer_name" {% if search_field == 'customer_name' %}selected{% endif %}>Customer Name</option>
+                            <option value="phone_number" {% if search_field == 'phone_number' %}selected{% endif %}>Phone Number</option>
+                            <option value="email" {% if search_field == 'email' %}selected{% endif %}>Email</option>
+                        </select>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search..." value="{{ search_query|default_if_none:'' }}">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Email</th>
+                                    <th>Address</th>
+                                    <th>Website</th>
+                                    <th>Remarks</th>
+                                    <th>Notes</th>
+                                    {% if user_role == 'admin' %}
+                                    <th>Assigned Manager</th>
+                                    {% endif %}
+                                    <th>Created By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="callbackTableBody">
+                                {% for callback in all_callbacks %}
+                                <tr data-callback-id="{{ callback.id }}" data-row-id="{{ callback.id }}">
+                                    <td class="editable" data-field="customer_name">{{ callback.customer_name|default:"N/A" }}</td>
+                                    <td class="editable" data-field="phone_number">{{ callback.phone_number|default:"N/A" }}</td>
+                                    <td class="editable" data-field="email">{{ callback.email|default:"N/A" }}</td>
+                                    <td class="editable" data-field="address">{{ callback.address|default:"N/A" }}</td>
+                                    <td class="editable" data-field="website">{{ callback.website|default:"N/A" }}</td>
+                                    <td class="editable" data-field="remarks">{{ callback.remarks|default:"N/A" }}</td>
+                                    <td class="editable" data-field="notes">{{ callback.notes|default:"N/A" }}</td>
+                                    {% if user_role == 'admin' %}
+                                    <td>
+                                        <select class="manager-select form-select" 
+                                                data-row-id="{{ callback.id }}"
+                                                data-username="{{ callback.customer_name|default:'N/A' }}">
+                                            <option value="" {% if not callback.manager %}selected{% endif %}>No Manager</option>
+                                            {% for manager in managers %}
+                                            <option value="{{ manager.id }}" {% if callback.manager and callback.manager.id == manager.id %}selected{% endif %}>{{ manager.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    {% endif %}
+                                    <td>{{ callback.created_by.username }}</td>
+                                    <td class="action-buttons">
+                                        <button class="btn btn-sm btn-action btn-outline-info" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-action btn-outline-success" style="display: none;" title="Save">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        {% if user_role == 'admin' %}
+                                        <button class="btn btn-sm btn-action btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{% if user_role == 'admin' %}10{% else %}9{% endif %}" class="text-center">No callbacks found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% include 'admin_dashboard_pagination.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Manager Modal -->
+    <div class="modal fade" id="assignManagerModal" tabindex="-1" aria-labelledby="assignManagerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignManagerModalLabel">Assign Manager for Callback <span id="assignCallbackName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="assignManagerForm">
+                    <input type="hidden" name="callback_id" id="assignCallbackId">
+                    <input type="hidden" name="manager_id" id="assignManagerId">
+                    <div class="modal-body">
+                        Are you sure you want to assign the selected manager to the callback for <span id="assignCallbackNameText"></span>?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Assign Manager</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container">
+        <div id="saveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white ms-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
@@ -372,9 +659,306 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
+            // Define remarks options (matching callbacklist.html)
+            const remarksOptions = ['', 'Callback', 'Pre-sale', 'Sample rejected', 'Sale'];
+
+            // Show toast notification
+            function showToast(message, type) {
+                const toastEl = document.getElementById('saveToast');
+                if (!toastEl) return;
+                const toastBody = toastEl.querySelector('.toast-body');
+                toastBody.textContent = message;
+                toastEl.classList.remove('bg-success', 'bg-danger');
+                toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Live search and pagination functionality
+            const searchInput = document.getElementById('searchInput');
+            const searchField = document.getElementById('searchField');
+            const tableBody = document.getElementById('callbackTableBody');
+            const pagination = document.getElementById('pagination');
+
+            window.loadPage = function(page) {
+                const query = searchInput.value.trim();
+                const field = searchField.value;
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', page);
+                if (query) {
+                    url.searchParams.set('q', query);
+                    url.searchParams.set('search_field', field);
+                } else {
+                    url.searchParams.delete('q');
+                    url.searchParams.delete('search_field');
+                }
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    tableBody.innerHTML = data.callbacks_html;
+                    pagination.innerHTML = data.pagination_html;
+                    document.querySelector('small.text-muted').textContent = `(${data.total_callbacks} callbacks)`;
+                    // Reinitialize tooltips after updating table
+                    const newTooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    newTooltipTriggerList.forEach(function(tooltipTriggerEl) {
+                        new bootstrap.Tooltip(tooltipTriggerEl);
+                    });
+                })
+                .catch(() => showToast('An error occurred while loading the page.', 'danger'));
+            };
+
+            function performSearch() {
+                window.loadPage(1); // Reset to first page on search
+            }
+
+            // Debounce to prevent excessive calls
+            let debounceTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(performSearch, 300);
+            });
+            searchField.addEventListener('change', performSearch);
+
+            // Event delegation for edit button
+            tableBody.addEventListener('click', function(e) {
+                const editButton = e.target.closest('.btn-outline-info');
+                if (editButton) {
+                    const row = editButton.closest('tr');
+                    const callbackId = row.getAttribute('data-callback-id');
+                    const editableCells = row.querySelectorAll('.editable');
+
+                    if (!row.classList.contains('editing')) {
+                        editableCells.forEach(cell => {
+                            const field = cell.getAttribute('data-field');
+                            const value = cell.textContent.trim() === 'N/A' ? '' : cell.textContent.trim();
+                            if (field === 'remarks') {
+                                let select = `<select class="form-control form-control-sm">`;
+                                remarksOptions.forEach(option => {
+                                    select += `<option value="${option}" ${value === option ? 'selected' : ''}>${option || 'Select Remark'}</option>`;
+                                });
+                                select += `</select>`;
+                                cell.innerHTML = select;
+                            } else if (field === 'email') {
+                                cell.innerHTML = `<input type="email" class="form-control form-control-sm" value="${value}" maxlength="100" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Enter a valid email address" />`;
+                            } else if (field === 'website') {
+                                cell.innerHTML = `<input type="url" class="form-control form-control-sm" value="${value}" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL" />`;
+                            } else if (field === 'customer_name') {
+                                cell.innerHTML = `<input type="text" class="form-control form-control-sm" value="${value}" maxlength="100" pattern="[A-Za-z\s]+" title="Only alphabetical characters allowed" />`;
+                            } else if (field === 'phone_number') {
+                                cell.innerHTML = `<input type="text" class="form-control form-control-sm" value="${value}" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" />`;
+                            } else {
+                                cell.innerHTML = `<input type="text" class="form-control form-control-sm" value="${value}" maxlength="255" />`;
+                            }
+                        });
+                        row.classList.add('editing');
+                        editButton.style.display = 'none';
+                        row.querySelector('.btn-outline-success').style.display = 'inline-block';
+                    }
+                }
+            });
+
+            // Event delegation for save button
+            tableBody.addEventListener('click', function(e) {
+                const saveButton = e.target.closest('.btn-outline-success');
+                if (saveButton) {
+                    const row = saveButton.closest('tr');
+                    const callbackId = row.getAttribute('data-callback-id');
+                    const editableCells = row.querySelectorAll('.editable');
+                    const data = [{
+                        callback_id: callbackId,
+                        target_user_id: null,
+                        customer_name: row.querySelector('[data-field="customer_name"] input')?.value.trim() || '',
+                        phone_number: row.querySelector('[data-field="phone_number"] input')?.value.trim() || '',
+                        email: row.querySelector('[data-field="email"] input')?.value.trim() || '',
+                        address: row.querySelector('[data-field="address"] input')?.value.trim() || '',
+                        website: row.querySelector('[data-field="website"] input')?.value.trim() || '',
+                        remarks: row.querySelector('[data-field="remarks"] select')?.value.trim() || '',
+                        notes: row.querySelector('[data-field="notes"] input')?.value.trim() || '',
+                        added_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+                    }];
+
+                    // Client-side validation
+                    let isValid = true;
+                    if (!data[0].customer_name || !/^[A-Za-z\s]+$/.test(data[0].customer_name)) {
+                        row.querySelector('[data-field="customer_name"] input').classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        row.querySelector('[data-field="customer_name"] input').classList.remove('is-invalid');
+                    }
+                    if (!data[0].phone_number || !/^[\+\-\(\),./#0-9\s]+$/.test(data[0].phone_number)) {
+                        row.querySelector('[data-field="phone_number"] input').classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        row.querySelector('[data-field="phone_number"] input').classList.remove('is-invalid');
+                    }
+                    if (data[0].email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(data[0].email)) {
+                        row.querySelector('[data-field="email"] input').classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        row.querySelector('[data-field="email"] input').classList.remove('is-invalid');
+                    }
+                    if (data[0].website && !/^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(data[0].website)) {
+                        row.querySelector('[data-field="website"] input').classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        row.querySelector('[data-field="website"] input').classList.remove('is-invalid');
+                    }
+
+                    if (!isValid) {
+                        showToast('Please correct the invalid fields.', 'danger');
+                        return;
+                    }
+
+                    fetch('/save_callbacks/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.status === 'success') {
+                            editableCells.forEach(cell => {
+                                const field = cell.getAttribute('data-field');
+                                let value = field === 'remarks' ? cell.querySelector('select').value.trim() : cell.querySelector('input').value.trim();
+                                cell.textContent = value || 'N/A';
+                            });
+                            row.classList.remove('editing');
+                            saveButton.style.display = 'none';
+                            row.querySelector('.btn-outline-info').style.display = 'inline-block';
+                            showToast('Callback updated successfully.', 'success');
+                            performSearch();
+                        } else {
+                            showToast('Error: ' + result.message, 'danger');
+                        }
+                    })
+                    .catch(() => showToast('An error occurred while saving.', 'danger'));
+                }
+            });
+
+            // Event delegation for delete button (admin only)
+            tableBody.addEventListener('click', function(e) {
+                const deleteButton = e.target.closest('.btn-outline-danger');
+                if (deleteButton) {
+                    const row = deleteButton.closest('tr');
+                    const callbackId = row.getAttribute('data-callback-id');
+                    if (confirm('Are you sure you want to delete this callback?')) {
+                        fetch('/delete_callback/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({ callback_ids: [callbackId] })
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.status === 'success') {
+                                showToast('Callback deleted successfully.', 'success');
+                                performSearch();
+                            } else {
+                                showToast('Error: ' + result.message, 'danger');
+                            }
+                        })
+                        .catch(() => showToast('An error occurred while deleting.', 'danger'));
+                    }
+                }
+            });
+
+            // Event delegation for manager selection to trigger modal
+            tableBody.addEventListener('change', function(e) {
+                const managerSelect = e.target.closest('.manager-select');
+                if (managerSelect) {
+                    const row = managerSelect.closest('tr');
+                    const callbackId = row.getAttribute('data-row-id');
+                    const callbackName = managerSelect.getAttribute('data-username');
+                    const newManagerId = managerSelect.value;
+
+                    managerSelect.setAttribute('data-original-value', managerSelect.value);
+
+                    const modal = new bootstrap.Modal(document.getElementById('assignManagerModal'));
+                    const modalCallbackName = document.getElementById('assignCallbackName');
+                    const modalCallbackNameText = document.getElementById('assignCallbackNameText');
+                    const callbackIdInput = document.getElementById('assignCallbackId');
+                    const managerIdInput = document.getElementById('assignManagerId');
+
+                    modalCallbackName.textContent = callbackName;
+                    modalCallbackNameText.textContent = callbackName;
+                    callbackIdInput.value = callbackId;
+                    managerIdInput.value = newManagerId;
+
+                    modal.show();
+                }
+            });
+
+            // Handle modal form submission
+            document.getElementById('assignManagerForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const callbackId = this.querySelector('#assignCallbackId').value;
+                const managerId = this.querySelector('#assignManagerId').value;
+                const modal = bootstrap.Modal.getInstance(document.getElementById('assignManagerModal'));
+
+                fetch('/assign_manager/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        callback_id: callbackId,
+                        manager_id: managerId
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        modal.hide();
+                        showToast(result.message, 'success');
+                        const select = document.querySelector(`select[data-row-id="${callbackId}"]`);
+                        if (select) {
+                            select.setAttribute('data-original-value', managerId);
+                        }
+                    } else {
+                        modal.hide();
+                        showToast('Error: ' + result.message, 'danger');
+                        const select = document.querySelector(`select[data-row-id="${callbackId}"]`);
+                        if (select) {
+                            select.value = select.getAttribute('data-original-value') || '';
+                        }
+                    }
+                })
+                .catch(() => {
+                    modal.hide();
+                    showToast('An error occurred while assigning the manager.', 'danger');
+                    const select = document.querySelector(`select[data-row-id="${callbackId}"]`);
+                    if (select) {
+                        select.value = select.getAttribute('data-original-value') || '';
+                    }
+                });
+            });
+
+            // Revert dropdown on modal cancel
+            document.getElementById('assignManagerModal').addEventListener('hidden.bs.modal', function() {
+                const selects = document.querySelectorAll('.manager-select');
+                selects.forEach(select => {
+                    select.value = select.getAttribute('data-original-value') || '';
+                });
+            });
+
+            // Store original manager value for all selects
+            document.querySelectorAll('.manager-select').forEach(select => {
+                select.setAttribute('data-original-value', select.value);
             });
         });
     </script>

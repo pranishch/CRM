@@ -1,0 +1,43 @@
+<tbody id="callbackTableBody">
+    {% for callback in all_callbacks %}
+    <tr data-callback-id="{{ callback.id }}" data-row-id="{{ callback.id }}">
+        <td class="editable" data-field="customer_name">{{ callback.customer_name|default:"N/A" }}</td>
+        <td class="editable" data-field="phone_number">{{ callback.phone_number|default:"N/A" }}</td>
+        <td class="editable" data-field="email">{{ callback.email|default:"N/A" }}</td>
+        <td class="editable" data-field="address">{{ callback.address|default:"N/A" }}</td>
+        <td class="editable" data-field="website">{{ callback.website|default:"N/A" }}</td>
+        <td class="editable" data-field="remarks">{{ callback.remarks|default:"N/A" }}</td>
+        <td class="editable" data-field="notes">{{ callback.notes|default:"N/A" }}</td>
+        {% if user_role == 'admin' %}
+        <td>
+            <select class="manager-select form-select" 
+                    data-row-id="{{ callback.id }}"
+                    data-username="{{ callback.customer_name|default:'N/A' }}">
+                <option value="" {% if not callback.manager %}selected{% endif %}>No Manager</option>
+                {% for manager in managers %}
+                <option value="{{ manager.id }}" {% if callback.manager and callback.manager.id == manager.id %}selected{% endif %}>{{ manager.username }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        {% endif %}
+        <td>{{ callback.created_by.username }}</td>
+        <td class="action-buttons">
+            <button class="btn btn-sm btn-action btn-outline-info" title="Edit">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-action btn-outline-success" style="display: none;" title="Save">
+                <i class="bi bi-check-circle"></i>
+            </button>
+            {% if user_role == 'admin' %}
+            <button class="btn btn-sm btn-action btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+            </button>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="{% if user_role == 'admin' %}10{% else %}9{% endif %}" class="text-center">No callbacks found.</td>
+    </tr>
+    {% endfor %}
+</tbody>

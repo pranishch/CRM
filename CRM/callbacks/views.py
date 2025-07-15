@@ -1,3 +1,4 @@
+import json
 from django.core.paginator import Paginator
 from django.contrib import messages, auth
 from django.http import JsonResponse, HttpResponseForbidden
@@ -11,6 +12,7 @@ from django.db.models import Q
 from datetime import datetime
 from .models import Callback, UserProfile
 from django.views.decorators.cache import never_cache
+from django.template.loader import render_to_string
 from .utils import get_user_role, can_manage_users, can_edit_all_callbacks
 import re
 
@@ -207,6 +209,7 @@ def manage_managers(request):
     return render(request, 'manage_managers.html', context)
 
 @login_required
+@csrf_protect
 def user_logout(request):
     auth.logout(request)
     messages.success(request, 'Logged out successfully.')
@@ -214,29 +217,72 @@ def user_logout(request):
 
 @login_required
 @never_cache
-# @permission_required('auth.manage_users', raise_exception=True)
 def admin_dashboard(request):
     if not (request.user.is_superuser or 
             (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
         messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('admin_dashboard')
+        return redirect('callbacklist')
     
     if not request.user.has_perm('auth.manage_users'):
         messages.error(request, 'Access denied. You lack the required permissions.')
         return redirect('callbacklist')
     
+    search_query = request.GET.get('q', '').strip()
+    search_field = request.GET.get('search_field', 'all')
+
     users = User.objects.all().prefetch_related('userprofile', 'groups')
-    total_callbacks = Callback.objects.count()
     total_users = User.objects.count()
     total_managers = User.objects.filter(userprofile__role='manager').count()
+    managers = User.objects.filter(userprofile__role='manager').prefetch_related('userprofile', 'groups')
+    
+    all_callbacks = Callback.objects.all().order_by('-added_at').prefetch_related('created_by__userprofile__manager')
+    
+    if search_query:
+        if search_field == 'all':
+            all_callbacks = all_callbacks.filter(
+                Q(customer_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(address__icontains=search_query) |
+                Q(website__icontains=search_query) |
+                Q(remarks__icontains=search_query) |
+                Q(notes__icontains=search_query)
+            )
+        elif search_field == 'customer_name':
+            all_callbacks = all_callbacks.filter(customer_name__icontains=search_query)
+        elif search_field == 'phone_number':
+            all_callbacks = all_callbacks.filter(phone_number__icontains=search_query)
+        elif search_field == 'email':
+            all_callbacks = all_callbacks.filter(email__icontains=search_query)
+    
+    total_callbacks = all_callbacks.count()
+    
+    paginator = Paginator(all_callbacks, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
     
     context = {
         'users': users,
         'total_callbacks': total_callbacks,
         'total_users': total_users,
         'total_managers': total_managers,
+        'all_callbacks': page_obj.object_list,
+        'managers': managers,
         'user_role': 'admin',
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'search_field': search_field,
     }
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        callbacks_html = render_to_string('admin_dashboard_table_body.html', context, request=request)
+        pagination_html = render_to_string('admin_dashboard_pagination.html', context, request=request)
+        return JsonResponse({
+            'callbacks_html': callbacks_html,
+            'pagination_html': pagination_html,
+            'total_callbacks': total_callbacks
+        })
+    
     return render(request, 'admin_dashboard.html', context)
 
 @login_required
@@ -285,14 +331,53 @@ def manager_dashboard(request, manager_id):
         Q(userprofile__role='agent') | Q(userprofile__isnull=True)
     ).exclude(userprofile__manager=manager).prefetch_related('userprofile', 'groups')
     
+    search_query = request.GET.get('q', '').strip()
+    search_field = request.GET.get('search_field', 'all')
+    callbacks = Callback.objects.filter(manager=manager).order_by('-added_at')
+    
+    if search_query:
+        if search_field == 'all':
+            callbacks = callbacks.filter(
+                Q(customer_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(address__icontains=search_query) |
+                Q(website__icontains=search_query) |
+                Q(remarks__icontains=search_query) |
+                Q(notes__icontains=search_query)
+            )
+        elif search_field == 'customer_name':
+            callbacks = callbacks.filter(customer_name__icontains=search_query)
+        elif search_field == 'phone_number':
+            callbacks = callbacks.filter(phone_number__icontains=search_query)
+        elif search_field == 'email':
+            callbacks = callbacks.filter(email__icontains=search_query)
+    
+    paginator = Paginator(callbacks, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     context = {
         'manager': manager,
         'agents': agents,
         'available_agents': available_agents,
         'user_role': getattr(request.user.userprofile, 'role', 'agent') if hasattr(request.user, 'userprofile') else 'agent',
+        'can_edit': request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager']),
+        'callbacks': page_obj.object_list,
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'search_field': search_field,
     }
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        callbacks_html = render_to_string('manager_dashboard_callbacks.html', context, request=request)
+        pagination_html = render_to_string('manager_dashboard_pagination.html', context, request=request)
+        return JsonResponse({
+            'callbacks_html': callbacks_html,
+            'pagination_html': pagination_html,
+        })
+    
     return render(request, 'manager_dashboard.html', context)
-
 
 @login_required
 @csrf_protect
@@ -300,18 +385,18 @@ def view_user_callbacks(request, user_id):
     target_user = get_object_or_404(User, id=user_id)
     current_user = request.user
     
-    # Restrict access to only the logged-in user's callbacks unless admin or manager
     if current_user != target_user and not (current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role in ['admin', 'manager'])):
         messages.error(request, 'Access denied. You can only view your own callbacks.')
         return redirect('callbacklist')
     
-    # Get search parameters
+    can_edit_all = can_edit_all_callbacks(current_user)
+    can_delete = can_edit_all
+    can_edit = can_edit_all or current_user == target_user or get_user_role(current_user) == 'manager'
     search_query = request.GET.get('q', '').strip()
     search_field = request.GET.get('search_field', 'customer_name')
 
-    if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
+    if can_edit_all:
         callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
-        can_edit = True
     elif hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'manager':
         if hasattr(target_user, 'userprofile') and target_user.userprofile.role != 'agent':
             messages.error(request, 'Access denied.')
@@ -320,20 +405,18 @@ def view_user_callbacks(request, user_id):
             messages.error(request, 'Access denied. You can only view callbacks of your assigned agents.')
             return redirect('manager_dashboard', manager_id=current_user.id)
         callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
-        can_edit = False
     else:
         if current_user != target_user:
             messages.error(request, 'Access denied.')
             return redirect('callbacklist')
         callbacks = Callback.objects.filter(created_by=current_user).order_by('-added_at')
-        can_edit = True
     
-    # Apply search filter
     if search_query:
         if search_field == 'all':
             callbacks = callbacks.filter(
                 Q(customer_name__icontains=search_query) |
                 Q(phone_number__icontains=search_query) |
+                Q(email__icontains=search_query) |
                 Q(address__icontains=search_query) |
                 Q(website__icontains=search_query) |
                 Q(remarks__icontains=search_query) |
@@ -343,9 +426,10 @@ def view_user_callbacks(request, user_id):
             callbacks = callbacks.filter(customer_name__icontains=search_query)
         elif search_field == 'phone_number':
             callbacks = callbacks.filter(phone_number__icontains=search_query)
+        elif search_field == 'email':
+            callbacks = callbacks.filter(email__icontains=search_query)
 
-    # Add pagination
-    paginator = Paginator(callbacks, 20)  # Show 20 callbacks per page
+    paginator = Paginator(callbacks, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -354,8 +438,9 @@ def view_user_callbacks(request, user_id):
         'page_obj': page_obj,
         'target_user': target_user,
         'can_edit': can_edit,
+        'can_delete': can_delete,
         'is_viewing_other': current_user != target_user,
-        'user_role': getattr(current_user.userprofile, 'role', 'agent') if hasattr(current_user, 'userprofile') else 'agent',
+        'user_role': get_user_role(current_user),
         'search_query': search_query,
         'search_field': search_field,
     }
@@ -364,56 +449,48 @@ def view_user_callbacks(request, user_id):
 @login_required
 @csrf_protect
 def callbacklist(request, user_id=None):
-    # Determine user role and permissions
     user_role = get_user_role(request.user)
     can_manage = can_manage_users(request.user)
     can_edit_all = can_edit_all_callbacks(request.user)
-    can_delete = can_edit_all  # Assuming delete permission aligns with edit_all
-    # Get search parameters
+    can_edit = user_role in ['admin', 'agent', 'manager']
+    can_delete = can_edit_all
     search_query = request.GET.get('q', '').strip()
-    search_field = request.GET.get('search_field', 'customer_name')  # Default to customer_name
+    search_field = request.GET.get('search_field', 'customer_name')
 
-    # Initialize context
     context = {
         'user_role': user_role,
         'can_manage_users': can_manage,
         'can_edit_all': can_edit_all,
+        'can_edit': can_edit,
         'can_delete': can_delete,
         'search_query': search_query,
         'search_field': search_field,
     }
 
     if user_id:
-        # User-specific callbacks
         target_user = get_object_or_404(User, id=user_id)
-        # Restrict access to only the logged-in user's callbacks unless admin or manager
-        if request.user != target_user and not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
+        if request.user != target_user and not (request.user.is_superuser or user_role in ['admin', 'manager']):
             messages.error(request, 'Access denied. You can only view your own callbacks.')
-            return redirect('callbacklist')  # Redirect to the logged-in user's callback list
-        # Filter callbacks where the user is either the creator or assigned
-        callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
+            return redirect('callbacklist')
+        callbacks = Callback.objects.filter(created_by=target_user)
         context.update({
             'is_viewing_other': True,
             'target_user': target_user,
         })
     else:
-        # General callback list
         if user_role == 'agent':
-            # Agents see only their own callbacks
-            callbacks = Callback.objects.filter(created_by=request.user).order_by('-added_at')
+            callbacks = Callback.objects.filter(created_by=request.user)
         else:
-            # Admins and managers see all callbacks
-            callbacks = Callback.objects.all().order_by('-added_at')
-        context.update({
-            'is_viewing_other': False,
-        })
+            callbacks = Callback.objects.all()
+        context.update({'is_viewing_other': False})
 
-    # Apply search filter
+    # Apply search filters if they exist
     if search_query:
         if search_field == 'all':
             callbacks = callbacks.filter(
                 Q(customer_name__icontains=search_query) |
                 Q(phone_number__icontains=search_query) |
+                Q(email__icontains=search_query) |
                 Q(address__icontains=search_query) |
                 Q(website__icontains=search_query) |
                 Q(remarks__icontains=search_query) |
@@ -423,17 +500,31 @@ def callbacklist(request, user_id=None):
             callbacks = callbacks.filter(customer_name__icontains=search_query)
         elif search_field == 'phone_number':
             callbacks = callbacks.filter(phone_number__icontains=search_query)
-       
+        elif search_field == 'email':
+            callbacks = callbacks.filter(email__icontains=search_query)
 
-    # Add pagination
-    paginator = Paginator(callbacks, 20)  # Show 20 callbacks per page
-    page_number = request.GET.get('page')
+    # Consistent ordering
+    callbacks = callbacks.order_by('-added_at')
+    
+    # Pagination
+    paginator = Paginator(callbacks, 20)
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
     context.update({
         'page_obj': page_obj,
-        'callbacks': page_obj.object_list,  # Pass the paginated list
+        'callbacks': page_obj.object_list,
     })
+
+    # Handle AJAX request for search
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        from django.template.loader import render_to_string
+        callbacks_html = render_to_string('callbacklist_table_body.html', context, request=request)
+        pagination_html = render_to_string('callbacklist_pagination.html', context, request=request)
+        return JsonResponse({
+            'callbacks_html': callbacks_html,
+            'pagination_html': pagination_html
+        })
 
     return render(request, 'callbacklist.html', context)
 
@@ -442,135 +533,160 @@ def callbacklist(request, user_id=None):
 def save_callbacks(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
-    
+
     try:
         user = request.user
-        saved_count = 0
-        
-        can_edit_all = user.is_superuser or (hasattr(user, 'userprofile') and user.userprofile.role == 'admin')
-        
-        target_user_id = request.POST.get('target_user_id')
-        if target_user_id and can_edit_all:
-            target_user = get_object_or_404(User, id=target_user_id)
-            Callback.objects.filter(created_by=target_user).delete()
-            callback_owner = target_user
+        user_role = get_user_role(user)
+        can_edit_all = can_edit_all_callbacks(user)
+
+        content_type = request.headers.get('Content-Type', '').lower()
+        if 'application/json' in content_type:
+            data = json.loads(request.body)
+            if not isinstance(data, list):
+                data = [data]
         else:
-            if can_edit_all:
-                existing_callbacks = Callback.objects.all()
-            else:
-                existing_callbacks = Callback.objects.filter(created_by=user)
-            existing_callbacks.delete()
-            callback_owner = user
-        
-        for i, name in enumerate(request.POST.getlist('customer_name')):
-            name = name.strip()
-            phone_list = request.POST.getlist('phone_number')
-            phone = phone_list[i].strip() if i < len(phone_list) else ''
+            data = [{
+                'callback_id': request.POST.get('callback_id'),
+                'target_user_id': request.POST.get('target_user_id'),
+                'customer_name': request.POST.get('customer_name', '').strip(),
+                'phone_number': request.POST.get('phone_number', '').strip(),
+                'email': request.POST.get('email', '').strip(),
+                'address': request.POST.get('address', '').strip(),
+                'website': request.POST.get('website', '').strip(),
+                'remarks': request.POST.get('remarks', '').strip(),
+                'notes': request.POST.get('notes', '').strip(),
+                'added_at': request.POST.get('added_at')
+            }]
+
+        saved_count = 0
+        for callback_data in data:
+            callback_id = callback_data.get('callback_id')
+            target_user_id = callback_data.get('target_user_id')
+            if target_user_id and not can_edit_all:
+                return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
             
-            if not name and not phone:
-                continue
-            
+            callback_owner = get_object_or_404(User, id=target_user_id) if target_user_id and can_edit_all else user
+
+            name = callback_data.get('customer_name', '').strip()
+            phone = callback_data.get('phone_number', '').strip()
+            email = callback_data.get('email', '').strip()
+            address = callback_data.get('address', '').strip()
+            website = callback_data.get('website', '').strip()
+            remarks = callback_data.get('remarks', '').strip()
+            notes = callback_data.get('notes', '').strip()
+            added_at = callback_data.get('added_at')
+
+            if not name or not phone:
+                raise ValueError("Customer name and phone number are required")
             if not re.match(r'^[A-Za-z\s]+$', name):
-                raise ValidationError("Customer name can only contain letters and spaces")
+                raise ValueError("Customer name can only contain letters and spaces")
             if len(name) < 2:
-                raise ValidationError("Customer name must be at least 2 characters")
-            if not re.match(r'^[\+\-0-9\s]+$', phone):
-                raise ValidationError("Phone number can only contain numbers, +, - and spaces")
+                raise ValueError("Customer name must be at least 2 characters")
+            if not re.match(r'^[\+\-0-9\s\(\),./#]+$', phone):
+                raise ValueError("Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces")
             if len(phone) < 5:
-                raise ValidationError("Phone number must be at least 5 characters")
-            
-            address_list = request.POST.getlist('address')
-            remarks_list = request.POST.getlist('remarks')
-            website_list = request.POST.getlist('website')
-            notes_list = request.POST.getlist('notes')
-            is_completed_list = request.POST.getlist('is_completed')
-            
-            address = address_list[i].strip() if i < len(address_list) else ''
-            remarks = remarks_list[i].strip() if i < len(remarks_list) else ''
-            website = website_list[i].strip() if i < len(website_list) else ''
-            notes = notes_list[i].strip() if i < len(notes_list) else ''
-            is_completed = str(i) in is_completed_list
-            
+                raise ValueError("Phone number must be at least 5 characters")
+            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                raise ValueError("Invalid email address")
             if address and len(address) < 5:
-                raise ValidationError("Address must be at least 5 characters if provided")
+                raise ValueError("Address must be at least 5 characters if provided")
             if website and not re.match(r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$', website):
-                raise ValidationError("Website must be a valid URL (e.g., http://example.com)")
+                raise ValueError("Invalid website URL")
             if website and len(website) > 255:
-                raise ValidationError("Website URL must not exceed 255 characters")
+                raise ValueError("Website URL must not exceed 255 characters")
             if notes and len(notes) > 255:
-                raise ValidationError("Notes must not exceed 255 characters")
-            
-            added_at_list = request.POST.getlist('added_at')
-            added_at = added_at_list[i].strip() if i < len(added_at_list) and added_at_list[i].strip() else None
+                raise ValueError("Notes must not exceed 255 characters")
+
             try:
-                if added_at:
-                    added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S')
-                else:
-                    added_at = datetime.now()
+                added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S') if added_at else datetime.now()
             except (ValueError, TypeError):
                 added_at = datetime.now()
-            
-            Callback.objects.create(
-                customer_name=name,
-                address=address,
-                phone_number=phone,
-                website=website,
-                remarks=remarks,
-                notes=notes,
-                is_completed=is_completed,
-                created_by=callback_owner,
-                added_at=added_at
-            )
-            saved_count += 1
-        
-        # If it's an AJAX request, return JSON
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'status': 'success',
-                'message': f'Saved {saved_count} entries',
-                'saved_count': saved_count
-            })
-        # Otherwise, redirect with a success message
-        else:
-            messages.success(request, f'Saved {saved_count} entries')
-            if target_user_id and can_edit_all:
-                return redirect('view_user_callbacks', user_id=target_user_id)
-            else:
-                return redirect('callbacklist')
-        
-    except ValidationError as e:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-        else:
-            messages.error(request, str(e))
-            if target_user_id and can_edit_all:
-                return redirect('view_user_callbacks', user_id=target_user_id)
-            else:
-                return redirect('callbacklist')
-    except Exception as e:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=400)
-        else:
-            messages.error(request, f'Error: {str(e)}')
-            if target_user_id and can_edit_all:
-                return redirect('view_user_callbacks', user_id=target_user_id)
-            else:
-                return redirect('callbacklist')
 
+            if callback_id:
+                callback = get_object_or_404(Callback, id=callback_id)
+                if user_role == 'manager' and callback.manager != user:
+                    raise PermissionDenied("You can only edit callbacks assigned to you")
+                callback.customer_name = name
+                callback.phone_number = phone
+                callback.email = email
+                callback.address = address
+                callback.website = website
+                callback.remarks = remarks
+                callback.notes = notes
+                callback.added_at = added_at
+                callback.save()
+                saved_count += 1
+            else:
+                if user_role not in ['admin', 'agent']:
+                    raise ValueError("Only admins and agents can create new callbacks")
+                callback = Callback.objects.create(
+                    created_by=callback_owner,
+                    added_at=added_at,
+                    customer_name=name,
+                    phone_number=phone,
+                    email=email,
+                    address=address,
+                    website=website,
+                    remarks=remarks,
+                    notes=notes
+                )
+                saved_count += 1
+
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Successfully saved {saved_count} callback(s).',
+            'saved_count': saved_count
+        })
+
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    except PermissionDenied as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=403)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=400)
+    
 @login_required
 @csrf_protect
-@never_cache
-def delete_callback(request, callback_id):
-    if not request.user.is_superuser:
-        messages.error(request, 'Access denied. Only superusers can delete callbacks.')
-        return redirect('callbacklist')
+def delete_callback(request):
+    if not (request.user.is_superuser or 
+            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+        return JsonResponse({'status': 'error', 'message': 'Access denied. Admin privileges required.'}, status=403)
     
-    callback = get_object_or_404(Callback, id=callback_id)
-    user_id = callback.created_by.id  # Get the user_id from the callback's created_by field
-    callback.delete()
-    messages.success(request, 'Callback deleted successfully.')
-    return redirect('callbacklist_with_user', user_id=user_id)
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
 
+    try:
+        # Expect JSON payload with callback_ids
+        data = json.loads(request.body)
+        callback_ids = data.get('callback_ids', [])
+        
+        # Ensure callback_ids is a list
+        if not isinstance(callback_ids, list):
+            callback_ids = [callback_ids] if callback_ids else []
+        
+        if not callback_ids:
+            return JsonResponse({'status': 'error', 'message': 'No callbacks selected for deletion.'}, status=400)
+
+        # Ensure all IDs are valid integers
+        callback_ids = [str(id) for id in callback_ids if id and str(id).isdigit()]
+        if not callback_ids:
+            return JsonResponse({'status': 'error', 'message': 'Invalid callback IDs provided.'}, status=400)
+
+        # Delete callbacks (admin can delete any callback)
+        deleted_count = Callback.objects.filter(id__in=callback_ids).delete()[0]
+
+        if deleted_count == 0:
+            return JsonResponse({'status': 'error', 'message': 'No valid callbacks found for deletion.'}, status=404)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Successfully deleted {deleted_count} callback(s).'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=500)
+    
 @login_required
 @csrf_protect
 def delete_user(request, user_id):
@@ -589,4 +705,46 @@ def delete_user(request, user_id):
     messages.success(request, f'User {username} deleted successfully.')
     return redirect(request.META.get('HTTP_REFERER', 'manage_users'))
 
+@login_required
+@csrf_protect
+def assign_manager(request):
+    if not (request.user.is_superuser or 
+            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+        return JsonResponse({'status': 'error', 'message': 'Access denied. Admin privileges required.'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
 
+    try:
+        data = json.loads(request.body)
+        callback_id = data.get('callback_id')
+        manager_id = data.get('manager_id')
+
+        if not callback_id:
+            return JsonResponse({'status': 'error', 'message': 'No callback ID provided.'}, status=400)
+
+        callback = get_object_or_404(Callback, id=callback_id)
+        
+        if manager_id:
+            manager = get_object_or_404(User, id=manager_id)
+            if hasattr(manager, 'userprofile') and manager.userprofile.role != 'manager':
+                return JsonResponse({'status': 'error', 'message': 'Selected user is not a manager.'}, status=400)
+            callback.manager = manager
+            callback.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Callback assigned to manager {manager.username}.'
+            })
+        else:
+            callback.manager = None
+            callback.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Callback unassigned from manager.'
+            })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=500)
+    

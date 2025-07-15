@@ -1,0 +1,25 @@
+<div id="pagination">
+  {% if page_obj.paginator.num_pages > 1 %}
+    {% if page_obj.has_previous %}
+      <button onclick="window.location.href='?page=1{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="First Page">««</button>
+      <button onclick="window.location.href='?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Previous Page">«</button>
+    {% else %}
+      <button disabled aria-label="First Page">««</button>
+      <button disabled aria-label="Previous Page">«</button>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="page-num active" aria-current="page">{{ num }}</span>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <span class="page-num" onclick="window.location.href='?page={{ num }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Page {{ num }}">{{ num }}</span>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <button onclick="window.location.href='?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Next Page">»</button>
+      <button onclick="window.location.href='?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Last Page">»»</button>
+    {% else %}
+      <button disabled aria-label="Next Page">»</button>
+      <button disabled aria-label="Last Page">»»</button>
+    {% endif %}
+  {% endif %}
+</div>

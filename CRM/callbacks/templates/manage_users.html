@@ -6,9 +6,10 @@
     <title>Manage Users | Callback System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
     <style>
         :root {
-            --primary-color: #4e73df;
+            --primary-color: orange;
             --secondary-color: #f8f9fc;
             --accent-color: #2e59d9;
             --admin-color: #dc3545;
@@ -27,7 +28,7 @@
         }
         .navbar {
             box-shadow: var(--shadow);
-            background: linear-gradient(to right, #2c3e50, #34495e);
+            background: linear-gradient(to right, orange, #34495e);
             transition: all 0.3s ease;
         }
         .navbar-brand {
@@ -159,7 +160,23 @@
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Enhanced Responsiveness */
+        .password-container {
+            position: relative;
+        }
+        .password-container input {
+            padding-right: 40px; /* Adjusted to fit toggle icon */
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+            font-size: 1rem; /* Consistent icon size */
+            line-height: 1;
+            padding: 5px;
+        }
         @media (max-width: 992px) {
             .main-container {
                 margin: 1rem auto;
@@ -217,7 +234,6 @@
                 font-size: 1rem;
             }
         }
-        /* Smooth scrolling for touch devices */
         .table-responsive {
             scrollbar-width: thin;
             scrollbar-color: var(--primary-color) transparent;
@@ -396,18 +412,20 @@
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-3 password-container">
                             <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
                             {{ form.password1 }}
+                            <i class="fas fa-eye password-toggle" id="createPassword1Toggle"></i>
                             {% if form.password1.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ form.password1.errors }}
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-3 password-container">
                             <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
                             {{ form.password2 }}
+                            <i class="fas fa-eye password-toggle" id="createPassword2Toggle"></i>
                             {% if form.password2.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ form.password2.errors }}
@@ -500,9 +518,10 @@
                     <input type="hidden" name="action" value="reset_password">
                     <input type="hidden" name="user_id" id="resetPasswordUserId">
                     <div class="modal-body">
-                        <div class="mb-3">
+                        <div class="mb-3 password-container">
                             <label for="new_password" class="form-label">New Password</label>
                             <input type="password" name="new_password" id="new_password" class="form-control" required>
+                            <i class="fas fa-eye password-toggle" id="resetPasswordToggle"></i>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -553,6 +572,35 @@
                 var modal = this;
                 modal.querySelector('#resetPasswordUserId').value = userId;
                 modal.querySelector('#passwordUsername').textContent = username;
+            });
+
+            // Password visibility toggle for Create User
+            const createPassword1Toggle = document.getElementById('createPassword1Toggle');
+            const createPassword1Input = document.getElementById('{{ form.password1.id_for_label }}');
+            createPassword1Toggle.addEventListener('click', function() {
+                const type = createPassword1Input.getAttribute('type') === 'password' ? 'text' : 'password';
+                createPassword1Input.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+
+            const createPassword2Toggle = document.getElementById('createPassword2Toggle');
+            const createPassword2Input = document.getElementById('{{ form.password2.id_for_label }}');
+            createPassword2Toggle.addEventListener('click', function() {
+                const type = createPassword2Input.getAttribute('type') === 'password' ? 'text' : 'password';
+                createPassword2Input.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+
+            // Password visibility toggle for Reset Password
+            const resetPasswordToggle = document.getElementById('resetPasswordToggle');
+            const resetPasswordInput = document.getElementById('new_password');
+            resetPasswordToggle.addEventListener('click', function() {
+                const type = resetPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                resetPasswordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
             });
         });
     </script>

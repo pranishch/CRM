@@ -5,13 +5,15 @@ class Callback(models.Model):
     customer_name = models.CharField(max_length=100, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(max_length=100, blank=True, null=True)
     website = models.URLField(max_length=255, blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
     notes = models.TextField(max_length=255, blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='callbacks_created', blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='callbacks_created', blank=True, null=True)  
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_callbacks')
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     added_at = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     is_completed = models.BooleanField(default=False)
 
     class Meta:
@@ -20,9 +22,11 @@ class Callback(models.Model):
             ('edit_all_callbacks', 'Can edit all callbacks'),
             ('delete_all_callbacks', 'Can delete all callbacks'),
             ('manage_users', 'Can manage users'),
+            ('manage_managers', 'Can manage managers'),
         ]
         indexes = [
             models.Index(fields=['created_by', 'created_at']),
+            models.Index(fields=['manager']),
         ]
 
     def __str__(self):

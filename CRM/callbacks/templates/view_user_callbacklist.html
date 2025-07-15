@@ -1,715 +1,858 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Callbacks for {{ target_user.username }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #4e73df;
-            --secondary-color: #f8f9fc;
-            --success-color: #1cc88a;
-            --warning-color: #f6c23e;
-            --danger-color: #e74a3b;
-            --agent-color: #36b9cc;
-            --text-dark: #2c3e50;
-            --shadow: 0 4px 12px rgba(0,0,0,0.15);
-            --border-radius: 10px;
-        }
-        body {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #e8ecef 100%);
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-dark);
-            min-height: 100vh;
-            padding-bottom: 2rem;
-        }
-        .navbar {
-            box-shadow: var(--shadow);
-            background: linear-gradient(to right, #2c3e50, #34495e);
-            transition: all 0.3s ease;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #fff !important;
-            transition: transform 0.2s ease;
-        }
-        .navbar-brand:hover {
-            transform: scale(1.05);
-        }
-        .user-greeting {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        .role-badge {
-            padding: 0.3rem 0.6rem;
-            border-radius: 12px;
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 500;
-            transition: transform 0.2s ease;
-        }
-        .role-badge:hover {
-            transform: translateY(-2px);
-        }
-        .role-agent {
-            background-color: var(--agent-color);
-        }
-        .role-manager {
-            background-color: var(--primary-color);
-        }
-        .role-admin {
-            background-color: var(--danger-color);
-        }
-        .main-container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .table {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: all 0.3s ease;
-        }
-        .table th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 1rem;
-        }
-        .table td {
-            vertical-align: middle;
-            padding: 0.75rem;
-        }
-        .form-control, .form-check-input {
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
-            transform: scale(1.01);
-        }
-        .action-buttons .btn {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.875rem;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background-color: var(--primary-color);
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn-primary:hover {
-            background-color: #2e59d9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .btn-success {
-            background-color: var(--success-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn-success:hover {
-            background-color: #17a673;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .btn-danger {
-            background-color: var(--danger-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn-danger:hover {
-            background-color: #c6392f;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .center-cell {
-            text-align: center;
-        }
-        .is-invalid {
-            border-color: var(--danger-color) !important;
-            animation: shake 0.3s ease;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25%, 75% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-        }
-        @media (max-width: 992px) {
-            .main-container {
-                margin: 1rem auto;
-                padding: 0 0.5rem;
-            }
-            .table th, .table td {
-                font-size: 0.85rem;
-                padding: 0.5rem;
-            }
-            .action-buttons .btn {
-                padding: 0.3rem 0.3rem;
-                font-size: 0.8rem;
-            }
-            .navbar-brand {
-                font-size: 1.1rem;
-            }
-            .user-greeting {
-                font-size: 0.8rem;
-            }
-        }
-        @media (max-width: 768px) {
-            .table-responsive {
-                border: none;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            .table {
-                min-width: 700px;
-            }
-            .action-buttons .btn {
-                padding: 0.25rem 0.5rem;
-                font-size: 0.75rem;
-            }
-            .navbar-nav {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            .user-greeting {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .form-control, .form-check-input {
-                font-size: 0.9rem;
-            }
-        }
-        @media (max-width: 576px) {
-            .table th, .table td {
-                font-size: 0.8rem;
-                padding: 0.4rem;
-            }
-            .action-buttons .btn {
-                padding: 0.2rem 0.4rem;
-                font-size: 0.7rem;
-            }
-            h2 {
-                font-size: 1.5rem;
-            }
-            .navbar-brand {
-                font-size: 1rem;
-            }
-        }
-        .table-responsive {
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) transparent;
-        }
-        .table-responsive::-webkit-scrollbar {
-            height: 8px;
-        }
-        .table-responsive::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .table-responsive::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 4px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>View User Callbacks</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    .callbacks-table-wrapper {
+      overflow-x: auto;
+      width: 100%;
+      border: 4px solid white;
+      border-radius: 8px;
+      background: #F9FAFB;
+    }
+    .top-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .top-controls button {
+      background: orange;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .top-controls button:hover {
+      background: #e69500;
+    }
+    .top-controls button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .top-controls input, .top-controls select {
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.95rem;
+    }
+    .top-controls select {
+      width: 160px;
+    }
+    .top-controls input {
+      width: 220px;
+    }
+    #pagination {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      user-select: none;
+    }
+    #pagination button,
+    #pagination span.page-num {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      min-width: 32px;
+      text-align: center;
+      color: #333;
+      transition: all 0.2s ease;
+    }
+    #pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #pagination span.page-num.active {
+      background: navy;
+      color: white;
+      border-color: navy;
+      cursor: default;
+    }
+    #pagination button:not(:disabled):hover,
+    #pagination span.page-num:not(.active):hover {
+      background-color: lightblue;
+      color: #fff;
+      border-color: lightblue;
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1055;
+    }
+    .toast {
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .is-invalid {
+      border-color: red !important;
+      background-color: #fff5f5;
+      animation: shake 0.3s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%, 75% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+    }
+    .new-entry-row .form-control,
+    .new-entry-row textarea {
+      background-color: #f7fafc;
+    }
+    .btn-logout {
+      background-color: orange;
+      border: none !important;
+      padding: 0.5rem 1.1rem !important;
+      color: white !important;
+      font-weight: 700 !important;
+      border-radius: 5px !important;
+      cursor: pointer !important;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease !important;
+      font-size: 1rem !important;
+      user-select: none !important;
+      box-shadow: 0 4px 10px rgba(107, 114, 128, 0.6) !important;
+    }
+    .btn-logout:hover {
+      background-color: #4b5563 !important;
+      box-shadow: 0 6px 15px rgba(75, 85, 99, 0.7) !important;
+    }
+    .main-content {
+      padding: 20px;
+      width: 100%;
+      background-color: #eff4f9;
+    }
+    .header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      padding-right: 1rem;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+    section {
+      background: rgb(255, 255, 255);
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(30, 144, 255, 0.15);
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      table-layout: fixed;
+    }
+    h2 {
+      color: black !important;
+    }
+    table thead tr {
+      background-color: orange;
+      color: black !important;
+      font-weight: 700;
+    }
+    table th, table td {
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid lightgray;
+      vertical-align: middle;
+      text-align: left;
+      min-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: black !important;
+    }
+    table th:nth-child(1), table td:nth-child(1) { /* Customer Name */
+      width: 15%;
+    }
+    table th:nth-child(2), table td:nth-child(2) { /* Phone Number */
+      width: 14%;
+    }
+    table th:nth-child(3), table td:nth-child(3) { /* Email */
+      width: 16%;
+    }
+    table th:nth-child(4), table td:nth-child(4) { /* Address */
+      width: 13%;
+    }
+    table th:nth-child(5), table td:nth-child(5) { /* Website */
+      width: 17%;
+    }
+    table th:nth-child(6), table td:nth-child(6) { /* Remarks */
+      width: 14%;
+    }
+    table th:nth-child(7), table td:nth-child(7) { /* Notes */
+      width: 11%;
+    }
+    table th:nth-child(8), table td:nth-child(8) { /* Actions */
+      width: 10%;
+      min-width: 60px;
+    }
+    table tbody tr:nth-child(even) {
+      background-color: whitesmoke;
+    }
+    table tbody tr:hover {
+      background-color: lightblue;
+    }
+    table input, table textarea, table select {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+    }
+    .action-icon {
+      cursor: pointer;
+      margin: 0 5px;
+      color: navy;
+    }
+    .action-icon:hover {
+      color: #2563eb;
+    }
+    .edit-mode td, .new-entry-row td {
+      padding: 0;
+    }
+    .edit-mode .editable-input, .new-entry-row .editable {
+      border: 1px solid #ccc;
+      padding: 0.25rem;
+      margin: 0;
+    }
+    .action-save-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .action-save-btn:hover {
+      background: #2563eb;
+    }
+    @media (max-width: 768px) {
+      table {
+        display: table;
+        width: 100%;
+      }
+      table th, table td {
+        padding: 0.4rem 0.6rem;
+        min-width: 60px;
+        max-width: 100px;
+      }
+      .top-controls input {
+        width: 100%;
+        max-width: 200px;
+      }
+      .top-controls select {
+        width: 100%;
+        max-width: 140px;
+      }
+      .main-content {
+        padding: 1rem;
+      }
+      .header {
+        justify-content: flex-end;
+        padding-right: 0.5rem;
+      }
+      .user-info {
+        justify-content: flex-end;
+        margin-left: auto;
+      }
+    }
+  </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'callbacklist' %}">
-                <i class="bi bi-telephone-outbound-fill me-2"></i>
-                Callback System
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
-                    <a class="nav-link" href="javascript:history.back()">
-                        <i class="bi bi-arrow-left me-1"></i> Back
-                    </a>
-                    <div class="user-greeting text-light me-3">
-                        <i class="bi bi-person-circle"></i>
-                        <span>{{ user.username }}</span>
-                        <span class="role-badge role-{{ user_role }}">{{ user_role|title }}</span>
-                    </div>
-                    <a class="nav-link" href="{% url 'logout' %}">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </a>
-                </div>
-            </div>
+  <div class="dashboard">
+    <main class="main-content">
+      <header class="header">
+        <div class="user-info">
+          <span>{{ user_role|title }}</span>
+          <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-logout" id="logoutBtn" aria-label="Logout">Logout</button>
+          </form>
         </div>
-    </nav>
-
-    <div class="container">
-        <div class="main-container">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+      </header>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+      <section id="callbacks" class="content-section">
+        <h2>Callbacks for {{ target_user.username }}</h2>
+        <div class="top-controls">
+          <div class="search-bar">
+              <input type="text" id="searchInput" class="form-control me-2" placeholder="Search all fields...">
+          </div>
+          <div class="button-group">
+            {% if can_edit and user_role == 'admin' %}
+              <button class="btn" id="addNewRow" aria-label="Add New Row" disabled><i class="fas fa-plus me-1"></i> Add Row</button>
             {% endif %}
-            <!-- Toast Container -->
-            <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
-                <div id="saveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body"></div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0">
-                    <i class="bi bi-table me-2"></i>
-                    Callbacks for {{ target_user.username }}
-                    <small class="text-muted">({{ callbacks.count }} total)</small>
-                </h2>
-                <div class="d-flex align-items-center gap-2"></div>
-                    <form class="d-flex" method="GET" action="{% url 'view_user_callbacks' user_id=target_user.id %}">
-                        <select name="search_field" class="form-control me-2" style="width: 150px;">
-                            <option value="all" {% if search_field == 'all' %}selected{% endif %}>All</option>
-                            <option value="customer_name" {% if search_field == 'customer_name' %}selected{% endif %}>Customer Name</option>
-                            <option value="phone_number" {% if search_field == 'phone_number' %}selected{% endif %}>Phone Number</option>
-                            <!-- <option value="address" {% if search_field == 'address' %}selected{% endif %}>Address</option> -->
-                            <!-- <option value="website" {% if search_field == 'website' %}selected{% endif %}>Website</option> -->
+          </div>
+        </div>
+        <div class="callbacks-table-wrapper">
+          <form id="callbackForm" method="post" action="{% url 'save_callbacks' %}">
+            {% csrf_token %}
+            <input type="hidden" name="target_user_id" value="{{ target_user.id }}">
+            <table id="callbacksTable">
+              <thead>
+                <tr>
+                  <th>Customer Name</th>
+                  <th>Phone Number</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Website</th>
+                  <th>Remarks</th>
+                  <th>Notes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                {% for callback in callbacks %}
+                  <tr data-callback-id="{{ callback.id }}" class="callback-row">
+                    <td>
+                      <input type="hidden" name="added_at" class="added-at-input" value="{{ callback.added_at|date:'Y-m-d H:i:s' }}">
+                      <span class="display-text name-input">{{ callback.customer_name|default_if_none:'' }}</span>
+                      <input type="text" class="editable-input name-input" style="display: none;" name="customer_name" maxlength="100" pattern="[A-Za-z\s]+" title="Only alphabetical characters allowed" value="{{ callback.customer_name|default_if_none:'' }}">
+                    </td>
+                    <td>
+                      <span class="display-text phone-input">{{ callback.phone_number|default_if_none:'' }}</span>
+                      <input type="text" class="editable-input phone-input" style="display: none;" name="phone_number" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" value="{{ callback.phone_number|default_if_none:'' }}">
+                    </td>
+                    <td>
+                      <span class="display-text email-input">{{ callback.email|default_if_none:'' }}</span>
+                      <input type="email" class="editable-input email-input" style="display: none;" name="email" maxlength="100" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Enter a valid email address (e.g., example@domain.com)" value="{{ callback.email|default_if_none:'' }}">
+                    </td>
+                    <td>
+                      <span class="display-text address-input">{{ callback.address|default_if_none:'' }}</span>
+                      <textarea class="editable-input address-input" style="display: none;" name="address" rows="1" maxlength="255">{{ callback.address|default_if_none:'' }}</textarea>
+                    </td>
+                    <td>
+                      <span class="display-text website-input">{{ callback.website|default_if_none:'' }}</span>
+                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
+                    </td>
+                    <td>
+                      <span class="display-text remarks-input">{{ callback.remarks|default_if_none:'' }}</span>
+                      <select class="editable-input remarks-input" style="display: none;" name="remarks">
+                        <option value="" {% if not callback.remarks %}selected{% endif %}>Select</option>
+                        <option value="Callback" {% if callback.remarks == "Callback" %}selected{% endif %}>Callback</option>
+                        <option value="Pre-sale" {% if callback.remarks == "Pre-sale" %}selected{% endif %}>Pre-sale</option>
+                        <option value="Sample rejected" {% if callback.remarks == "Sample rejected" %}selected{% endif %}>Sample rejected</option>
+                        <option value="Sale" {% if callback.remarks == "Sale" %}selected{% endif %}>Sale</option>
 
-                        </select>
-                        <input type="text" name="q" class="form-control me-2" placeholder="Search..." value="{{ search_query|default_if_none:'' }}" style="width: 200px;">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Search
-                        </button>
-                    </form>
-                {% if can_edit %}
-                <div class="action-buttons">
-                    <button class="btn btn-primary" id="saveData">
-                        <i class="bi bi-save me-1"></i> Save Data
-                    </button>
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="table-responsive">
-                <form id="callbackForm" method="post" action="{% url 'save_callbacks' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="target_user_id" value="{{ target_user.id }}">
-                    
-                    <table class="table table-hover" id="callbackTable">
-                        <thead>
-                            <tr>
-                                <th style="width: 20%">Customer Name</th>
-                                <th style="width: 25%">Address</th>
-                                <th style="width: 15%">Phone Number</th>
-                                <th style="width: 15%">Website</th>
-                                <th style="width: 15%">Remarks</th>
-                                <th style="width: 15%">Notes</th>
-                                <th style="width: 10%">Created Date</th>
-                            </tr>
-                        </thead>
-                       <tbody>
-                            {% for callback in callbacks %}
-                            <tr>
-                                <td>
-                                    <input type="text" name="customer_name" 
-                                        class="form-control editable name-input" 
-                                        value="{{ callback.customer_name|default_if_none:'' }}" 
-                                        maxlength="100" 
-                                        pattern="[A-Za-z\s]+" 
-                                        title="Only alphabetical characters allowed" 
-                                        {% if not can_edit %}disabled{% endif %}>
-                                </td>
-                                <td>
-                                    <textarea name="address" 
-                                            class="form-control editable address-input" 
-                                            rows="1" 
-                                            maxlength="255" 
-                                            {% if not can_edit %}disabled{% endif %}>{{ callback.address|default_if_none:'' }}</textarea>
-                                </td>
-                                <td>
-                                    <input type="text" name="phone_number" 
-                                        class="form-control editable phone-input" 
-                                        value="{{ callback.phone_number|default_if_none:'' }}" 
-                                        pattern="[\+\-\(\),./#0-9\s]+" 
-                                        title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
-                                        maxlength="20" 
-                                        {% if not can_edit %}disabled{% endif %}>
-                                </td>
-                                <td>
-                                    <input type="url" name="website" 
-                                        class="form-control editable website-input" 
-                                        value="{{ callback.website|default_if_none:'' }}" 
-                                        maxlength="255" 
-                                        pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" 
-                                        title="Enter a valid URL (e.g., http://example.com)" 
-                                        {% if not can_edit %}disabled{% endif %}>
-                                </td>
-                                <td>
-                                    <select name="remarks" 
-                                            class="form-control editable" 
-                                            {% if not can_edit %}disabled{% endif %}>
-                                        <option value="" {% if not callback.remarks %}selected{% endif %}>Select</option>
-                                        <option value="Interested" {% if callback.remarks == 'Interested' %}selected{% endif %}>Interested</option>
-                                        <option value="Call Back Later" {% if callback.remarks == 'Call Back Later' %}selected{% endif %}>Call Back Later</option>
-                                        <option value="Not Interested" {% if callback.remarks == 'Not Interested' %}selected{% endif %}>Not Interested</option>
-                                        <option value="Wrong Number" {% if callback.remarks == 'Wrong Number' %}selected{% endif %}>Wrong Number</option>
-                                        <option value="Deal Closed" {% if callback.remarks == 'Deal Closed' %}selected{% endif %}>Deal Closed</option>
-                                        <option value="Number Busy / Not Reachable" {% if callback.remarks == 'Number Busy / Not Reachable' %}selected{% endif %}>Number Busy / Not Reachable</option>
-                                        <option value="Already Has a Service" {% if callback.remarks == 'Already Has a Service' %}selected{% endif %}>Already Has a Service</option>
-                                        <option value="Need More Info" {% if callback.remarks == 'Need More Info' %}selected{% endif %}>Need More Info</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <textarea name="notes" 
-                                            class="form-control editable" 
-                                            rows="1" 
-                                            maxlength="255" 
-                                            {% if not can_edit %}disabled{% endif %}>{{ callback.notes|default_if_none:'' }}</textarea>
-                                </td>
-                                <td>
-                                    <input type="hidden" name="added_at" class="added-at-input" value="{{ callback.added_at|date:'Y-m-d H:i:s' }}">
-                                    <input type="text" 
-                                        class="form-control added-at-display" 
-                                        value="{{ callback.added_at|date:'Y-m-d H:i:s' }}" 
-                                        disabled>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            {% if can_edit %}
-                            <tr class="new-entry-row">
-                                <td>
-                                    <input type="text" name="customer_name" 
-                                        class="form-control editable name-input" 
-                                        placeholder="" 
-                                        maxlength="100" 
-                                        pattern="[A-Za-z\s]+" 
-                                        title="Only alphabetical characters allowed">
-                                </td>
-                                <td>
-                                    <textarea name="address" 
-                                            class="form-control editable address-input" 
-                                            rows="1" 
-                                            placeholder="" 
-                                            maxlength="255"></textarea>
-                                </td>
-                                <td>
-                                    <input type="text" name="phone_number" 
-                                        class="form-control editable phone-input" 
-                                        placeholder="" 
-                                        pattern="[\+\-\(\),./#0-9\s]+" 
-                                        title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" 
-                                        maxlength="20">
-                                </td>
-                                <td>
-                                    <input type="url" name="website" 
-                                        class="form-control editable website-input" 
-                                        placeholder="" 
-                                        maxlength="255" 
-                                        pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" 
-                                        title="Enter a valid URL (e.g., http://example.com)">
-                                </td>
-                                <td>
-                                    <select name="remarks" class="form-control editable">
-                                        <option value="" selected>Select</option>
-                                        <option value="Interested">Interested</option>
-                                        <option value="Call Back Later">Call Back Later</option>
-                                        <option value="Not Interested">Not Interested</option>
-                                        <option value="Wrong Number">Wrong Number</option>
-                                        <option value="Deal Closed">Deal Closed</option>
-                                        <option value="Number Busy / Not Reachable">Number Busy / Not Reachable</option>
-                                        <option value="Already Has a Service">Already Has a Service</option>
-                                        <option value="Need More Info">Need More Info</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <textarea name="notes" 
-                                            class="form-control editable" 
-                                            rows="1" 
-                                            placeholder="" 
-                                            maxlength="255"></textarea>
-                                </td>
-                                <td>
-                                    <input type="hidden" name="added_at" class="added-at-input" value="">
-                                    <input type="text" 
-                                        class="form-control added-at-display" 
-                                        value="" 
-                                        disabled>
-                                </td>
-                                <td class="center-cell">
-                                    <button type="button" class="btn btn-sm btn-success add-row-btn">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </form>
-            </div>
+                      </select>
+                    </td>
+                    <td>
+                      <span class="display-text notes-input">{{ callback.notes|default_if_none:'' }}</span>
+                      <textarea class="editable-input notes-input" style="display: none;" name="notes" rows="1" maxlength="255">{{ callback.notes|default_if_none:'' }}</textarea>
+                    </td>
+                    <td>
+                      {% if user_role == 'admin' or user_role == 'manager' %}
+                        <i class="fas fa-edit action-icon edit-callback" title="Edit" aria-label="Edit Callback"></i>
+                        <i class="fas fa-times action-icon cancel-edit" title="Cancel" style="display: none;" aria-label="Cancel Edit"></i>
+                        <button type="button" class="action-save-btn" style="display: none;" aria-label="Save Row">Save</button>
+                      {% endif %}
+                      {% if user_role == 'admin' %}
+                        <i class="fas fa-trash action-icon delete-callback" title="Delete" aria-label="Delete Callback"></i>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="8" class="text-center">No callbacks found for {{ target_user.username }}.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </form>
         </div>
         {% if page_obj.paginator.num_pages > 1 %}
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1" aria-label="First">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+          <div id="pagination">
+            {% if page_obj.has_previous %}
+              <button onclick="window.location.href='?page=1{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="First Page">««</button>
+              <button onclick="window.location.href='?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Previous Page">«</button>
+            {% else %}
+              <button disabled aria-label="First Page">««</button>
+              <button disabled aria-label="Previous Page">«</button>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <span class="page-num active" aria-current="page">{{ num }}</span>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <span class="page-num" onclick="window.location.href='?page={{ num }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Page {{ num }}">{{ num }}</span>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <button onclick="window.location.href='?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Next Page">»</button>
+              <button onclick="window.location.href='?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}&search_field={{ search_field }}{% endif %}'" aria-label="Last Page">»»</button>
+            {% else %}
+              <button disabled aria-label="Next Page">»</button>
+              <button disabled aria-label="Last Page">»»</button>
+            {% endif %}
+          </div>
         {% endif %}
+      </section>
+    </main>
+  </div>
+  <div class="toast-container">
+    <div id="saveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Function to set added_at timestamp for a row
-            function setAddedAtTimestamp(row) {
-                const addedAtInput = row.querySelector('.added-at-input');
-                const addedAtDisplay = row.querySelector('.added-at-display');
-                if (addedAtInput && !addedAtInput.value) {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    const seconds = String(now.getSeconds()).padStart(2, '0');
-                    const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-                    addedAtInput.value = timestamp;
-                    addedAtDisplay.value = timestamp;
-                }
-            }
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Sanitize input to prevent XSS
+      function sanitizeInput(value) {
+        const div = document.createElement('div');
+        div.textContent = value || '';
+        return div.innerHTML;
+      }
 
-            // Show toast notification
-            function showToast(message, type) {
-                const toastEl = document.getElementById('saveToast');
-                const toastBody = toastEl.querySelector('.toast-body');
-                toastBody.textContent = message;
-                toastEl.classList.remove('bg-success', 'bg-danger');
-                toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
-                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-                toast.show();
-            }
+      // Live search functionality
+            const searchInput = document.getElementById('searchInput');
+            const tableBody = document.querySelector('.table tbody');
+            const rows = tableBody.querySelectorAll('tr[data-callback-id]');
 
-            // Save button functionality with AJAX
-            const saveButton = document.getElementById('saveData');
-            if (saveButton) {
-                saveButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const form = document.getElementById('callbackForm');
-                    
-                    // Form validation
-                    const nameInputs = form.querySelectorAll('.name-input');
-                    const phoneInputs = form.querySelectorAll('.phone-input');
-                    const websiteInputs = form.querySelectorAll('.website-input');
-                    let isValid = true;
-                    
-                    nameInputs.forEach(input => {
-                        if (input.value.trim() === '' && !input.disabled) {
-                            input.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            input.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    phoneInputs.forEach(input => {
-                        if (input.value.trim() === '' && !input.disabled) {
-                            input.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            input.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    websiteInputs.forEach(input => {
-                        if (input.value.trim() !== '' && !input.disabled) {
-                            const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/;
-                            if (!urlPattern.test(input.value.trim())) {
-                                input.classList.add('is-invalid');
-                                isValid = false;
-                            } else {
-                                input.classList.remove('is-invalid');
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    if (!isValid) {
-                        showToast('Please fill in all required fields (Customer Name and Phone Number) and ensure Website fields contain valid URLs for editable rows.', 'danger');
-                        return;
-                    }
+            function performSearch() {
+                const query = searchInput.value.trim().toLowerCase();
 
-                    // Send AJAX request
-                    const formData = new FormData(form);
-                    fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            showToast(data.message, 'success');
-                            // Optionally refresh the page to show updated data
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1500);
-                        } else {
-                            showToast(data.message, 'danger');
-                        }
-                    })
-                    .catch(error => {
-                        showToast('An error occurred while saving. Please try again.', 'danger');
-                    });
+                rows.forEach(row => {
+                    const customerName = row.querySelector('[data-field="customer_name"]')?.textContent.toLowerCase() || '';
+                    const phoneNumber = row.querySelector('[data-field="phone_number"]')?.textContent.toLowerCase() || '';
+                    const email = row.querySelector('[data-field="email"]')?.textContent.toLowerCase() || '';
+                    const address = row.querySelector('[data-field="address"]')?.textContent.toLowerCase() || '';
+                    const website = row.querySelector('[data-field="website"]')?.textContent.toLowerCase() || '';
+                    const remarks = row.querySelector('[data-field="remarks"]')?.textContent.toLowerCase() || '';
+                    const notes = row.querySelector('[data-field="email"]')?.textContent.toLowerCase() || '';
+
+                    const match = customerName.includes(query) || phoneNumber.includes(query) || email.includes(query) 
+                    || address.includes(query) || website.includes(query) || remarks.includes(query) || notes.includes(query);
+                    row.style.display = match || query === '' ? '' : 'none';
                 });
             }
-            
-            // Add new row functionality
-            const addRowButton = document.querySelector('.add-row-btn');
-            if (addRowButton) {
-                addRowButton.addEventListener('click', function() {
-                    const newRow = document.querySelector('.new-entry-row').cloneNode(true);
-                    const inputs = newRow.querySelectorAll('input, textarea, select');
-                    
-                    inputs.forEach(input => {
-                        if (input.tagName === 'SELECT') {
-                            input.value = '';
-                        } else if (input.classList.contains('added-at-input') || input.classList.contains('added-at-display')) {
-                            input.value = '';
-                        } else {
-                            input.value = '';
-                        }
-                        if (input.type === 'checkbox') {
-                            input.checked = false;
-                        }
-                    });
-                    
-                    const tableBody = document.querySelector('#callbackTable tbody');
-                    const lastRow = tableBody.lastElementChild;
-                    tableBody.insertBefore(newRow, lastRow);
-                    
-                    setAddedAtTimestamp(newRow); // Set timestamp for the new row
-                    newRow.querySelector('input').focus();
-                });
-            }
-            
-            // Set timestamp when any input in the new row is edited
-            document.querySelectorAll('.new-entry-row .editable').forEach(input => {
-                input.addEventListener('input', function() {
-                    const row = input.closest('.new-entry-row');
-                    setAddedAtTimestamp(row);
-                });
+
+            // Debounce to prevent excessive calls
+            let debounceTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(performSearch, 300);
             });
-            
-            // Form validation
-            const callbackForm = document.getElementById('callbackForm');
-            if (callbackForm) {
-                callbackForm.addEventListener('submit', function(e) {
-                    const nameInputs = document.querySelectorAll('.name-input');
-                    const phoneInputs = document.querySelectorAll('.phone-input');
-                    const websiteInputs = document.querySelectorAll('.website-input');
-                    let isValid = true;
-                    
-                    nameInputs.forEach(input => {
-                        if (input.value.trim() === '' && !input.disabled) {
-                            input.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            input.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    phoneInputs.forEach(input => {
-                        if (input.value.trim() === '' && !input.disabled) {
-                            input.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            input.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    websiteInputs.forEach(input => {
-                        if (input.value.trim() !== '' && !input.disabled) {
-                            const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/;
-                            if (!urlPattern.test(input.value.trim())) {
-                                input.classList.add('is-invalid');
-                                isValid = false;
-                            } else {
-                                input.classList.remove('is-invalid');
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    if (!isValid) {
-                        e.preventDefault();
-                        alert('Please fill in all required fields (Customer Name and Phone Number) and ensure Website fields contain valid URLs for editable rows.');
-                    }
-                });
+
+      // Set timestamp for new rows
+      function setAddedAtTimestamp(row) {
+        const addedAtInput = row.querySelector('.added-at-input');
+        if (addedAtInput && !addedAtInput.value) {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+          addedAtInput.value = timestamp;
+        }
+      }
+
+      // Show toast notification
+      function showToast(message, type) {
+        const toastEl = document.getElementById('saveToast');
+        if (!toastEl) return;
+        const toastBody = toastEl.querySelector('.toast-body');
+        toastBody.textContent = sanitizeInput(message);
+        toastEl.classList.remove('bg-success', 'bg-danger');
+        toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+      }
+
+      // Check if any rows are in edit mode or unsaved
+      function updateAddRowButtonState() {
+        const addRowButton = document.getElementById('addNewRow');
+        if (!addRowButton) return;
+        const unsavedRows = document.querySelectorAll('.edit-mode, [data-new-row="true"]');
+        addRowButton.disabled = unsavedRows.length > 0;
+      }
+
+      // Create a template for new row
+      function createNewRowTemplate() {
+        const template = document.createElement('tr');
+        template.className = 'new-entry-row';
+        template.setAttribute('data-new-row', 'true');
+        template.innerHTML = `
+          <td>
+            <input type="hidden" name="added_at" class="added-at-input" value="">
+            <input type="text" name="customer_name" class="form-control editable name-input" 
+                   placeholder="Name" maxlength="100" pattern="[A-Za-z\s]+" 
+                   title="Only alphabetical characters allowed">
+          </td>
+          <td>
+            <input type="text" name="phone_number" class="form-control editable phone-input" 
+                   placeholder="Phone" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" 
+                   title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed">
+          </td>
+          <td>
+            <input type="email" name="email" class="form-control editable email-input" 
+                   placeholder="Email" maxlength="100" 
+                   pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" 
+                   title="Enter a valid email address (e.g., example@domain.com)">
+          </td>
+          <td>
+            <textarea name="address" class="form-control editable address-input" 
+                      rows="1" placeholder="Address" maxlength="255"></textarea>
+          </td>
+          <td>
+            <input type="url" name="website" class="form-control editable website-input" 
+                   placeholder="Website" maxlength="255" 
+                   pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" 
+                   title="Enter a valid URL (e.g., http://example.com)">
+          </td>
+          <td>
+            <select name="remarks" class="form-control editable remarks-input">
+              <option value="" selected>Select</option>
+              <option value="Callback">Callback</option>
+              <option value="Pre-sale">Pre-sale</option>
+              <option value="Sample Rejected">Sample Rejected</option>
+              <option value="Sale">Sale</option>
+
+            </select>
+          </td>
+          <td>
+            <textarea name="notes" class="form-control editable notes-input" rows="1" 
+                      placeholder="Notes" maxlength="255"></textarea>
+          </td>
+          <td>
+            <button type="button" class="action-save-btn" aria-label="Save New Row">Save</button>
+          </td>
+        `;
+        return template;
+      }
+
+      // Add new row functionality (admin only)
+      const addRowButton = document.getElementById('addNewRow');
+      if (addRowButton) {
+        addRowButton.addEventListener('click', function() {
+          const existingNewRow = document.querySelector('[data-new-row="true"]');
+          if (existingNewRow) return; // Prevent adding multiple new rows
+          const tableBody = document.querySelector('#tableBody');
+          const newRow = createNewRowTemplate();
+          tableBody.appendChild(newRow);
+          setAddedAtTimestamp(newRow);
+          const firstInput = newRow.querySelector('input:not([disabled])');
+          if (firstInput) firstInput.focus();
+          updateAddRowButtonState();
+        });
+      }
+
+      // Toggle edit mode
+      document.querySelector('#tableBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-callback')) {
+          const row = e.target.closest('tr');
+          row.classList.add('edit-mode');
+          const editableFields = ['name-input', 'phone-input', 'email-input', 'address-input', 'website-input', 'remarks-input', 'notes-input'];
+          row.querySelectorAll('.display-text').forEach(span => {
+            if (editableFields.includes(span.classList[1])) {
+              span.style.display = 'none';
+            }
+          });
+          row.querySelectorAll('.editable-input').forEach(input => {
+            if (editableFields.includes(input.classList[1])) {
+              input.style.display = 'block';
+            }
+          });
+          row.querySelector('.cancel-edit').style.display = 'inline';
+          row.querySelector('.action-save-btn').style.display = 'inline';
+          e.target.style.display = 'none';
+          const callbackId = row.getAttribute('data-callback-id');
+          if (callbackId) {
+            let callbackIdInput = row.querySelector('input[name="callback_id"]');
+            if (!callbackIdInput) {
+              callbackIdInput = document.createElement('input');
+              callbackIdInput.type = 'hidden';
+              callbackIdInput.name = 'callback_id';
+              row.querySelector('td:first-child').appendChild(callbackIdInput);
+            }
+            callbackIdInput.value = callbackId;
+          }
+          row.setAttribute('data-edited', 'true');
+          updateAddRowButtonState();
+        }
+      });
+
+      // Cancel edit
+      document.querySelector('#tableBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-edit')) {
+          const row = e.target.closest('tr');
+          row.classList.remove('edit-mode');
+          row.querySelectorAll('.display-text').forEach(span => span.style.display = 'inline');
+          row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'none');
+          row.querySelector('.cancel-edit').style.display = 'none';
+          row.querySelector('.action-save-btn').style.display = 'none';
+          row.querySelector('.edit-callback').style.display = 'inline';
+          const callbackIdInput = row.querySelector('input[name="callback_id"]');
+          if (callbackIdInput) callbackIdInput.remove();
+          row.removeAttribute('data-edited');
+          row.querySelectorAll('.editable-input').forEach(input => {
+            const displayText = row.querySelector(`.display-text.${input.classList[1]}`)?.textContent || '';
+            input.value = input.tagName === 'SELECT' ? input.querySelector(`option[value="${displayText}"]`)?.value || '' : displayText;
+          });
+          updateAddRowButtonState();
+        }
+      });
+
+      // Save row (new or edited)
+      document.querySelector('#tableBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('action-save-btn')) {
+          const row = e.target.closest('tr');
+          const form = document.getElementById('callbackForm');
+          const formData = new FormData();
+          const userRole = '{{ user_role }}';
+          const isNewRow = row.classList.contains('new-entry-row');
+          const callbackId = row.getAttribute('data-callback-id');
+          const editableFields = ['customer_name', 'phone_number', 'email', 'address', 'website', 'remarks', 'notes'];
+          let isValid = true;
+
+          // Add CSRF token and target_user_id
+          formData.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
+          formData.append('target_user_id', form.querySelector('[name="target_user_id"]').value);
+
+          // Add row data
+          const inputs = {
+            added_at: row.querySelector('.added-at-input'),
+            customer_name: row.querySelector(isNewRow ? '[name="customer_name"]' : '.name-input.editable-input'),
+            phone_number: row.querySelector(isNewRow ? '[name="phone_number"]' : '.phone-input.editable-input'),
+            email: row.querySelector(isNewRow ? '[name="email"]' : '.email-input.editable-input'),
+            address: row.querySelector(isNewRow ? '[name="address"]' : '.address-input.editable-input'),
+            website: row.querySelector(isNewRow ? '[name="website"]' : '.website-input.editable-input'),
+            remarks: row.querySelector(isNewRow ? '[name="remarks"]' : '.remarks-input.editable-input'),
+            notes: row.querySelector(isNewRow ? '[name="notes"]' : '.notes-input.editable-input'),
+          };
+
+          if (Object.values(inputs).some(input => !input)) {
+            showToast('Missing input fields.', 'danger');
+            return;
+          }
+
+          // Add callback_id for edited rows
+          if (callbackId) {
+            formData.append('callback_id', callbackId);
+          }
+
+          // Add all editable fields
+          editableFields.forEach(field => {
+            const input = inputs[field];
+            formData.append(field, sanitizeInput(input.value.trim()));
+          });
+
+          // Client-side validation
+          // Track which fields were edited
+          const editedFields = [];
+          if (!isNewRow) {
+            editableFields.forEach(field => {
+              const input = inputs[field];
+              const originalValue = row.querySelector(`.display-text.${field.replace('_', '-')}-input`)?.textContent.trim() || '';
+              const newValue = input.tagName === 'SELECT' ? input.value : input.value.trim();
+              if (newValue !== originalValue) {
+                editedFields.push(field);
+              }
+            });
+          } else {
+            // For new rows, consider all fields as edited
+            editableFields.forEach(field => editedFields.push(field));
+          }
+
+          // Validation rules for each field
+          const validationRules = {
+            customer_name: {
+              pattern: /^[A-Za-z\s]+$/,
+              error: 'Customer name must contain only alphabetical characters and spaces.',
+              required: userRole !== 'manager' // Required for admins, not for managers
+            },
+            phone_number: {
+              pattern: /^[\+\-\(\),./#0-9\s]+$/,
+              error: 'Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces.',
+              required: userRole !== 'manager' // Required for admins, not for managers
+            },
+            email: {
+              pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+              error: 'Please enter a valid email address (e.g., example@domain.com).',
+              required: false // Optional for all roles
+            },
+            website: {
+              pattern: /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/,
+              error: 'Please enter a valid URL (e.g., http://example.com).',
+              required: false // Optional for all roles
+            },
+            address: {
+              pattern: /.*/, // No specific pattern, just max length
+              error: 'Address cannot exceed 255 characters.',
+              required: false // Optional for all roles
+            },
+            remarks: {
+              pattern: /^(Callback|Pre-sale|Sample rejected|Sale)?$/,
+              error: 'Please select a valid remark.',
+              required: false // Optional for all roles
+            },
+            notes: {
+              pattern: /.*/, // No specific pattern, just max length
+              error: 'Notes cannot exceed 255 characters.',
+              required: false // Optional for all roles
+            }
+          };
+
+          // Validate only edited fields
+          editedFields.forEach(field => {
+            const input = inputs[field];
+            const value = input.value.trim();
+            const rule = validationRules[field];
+
+            // Skip validation for empty optional fields
+            if (!value && !rule.required) {
+              input.classList.remove('is-invalid');
+              return;
             }
 
-            // Disable copy, cut, and paste
-            if ('{{ user_role }}' === 'agent') {
-                document.addEventListener('copy', function(e) {
-                    e.preventDefault();
-                });
-                document.addEventListener('cut', function(e) {
-                    e.preventDefault();
-                });
-                document.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                });
+            // Check required fields for admins or new rows
+            if (rule.required && !value) {
+              input.classList.add('is-invalid');
+              isValid = false;
+              return;
             }
-        });
-    </script>
+
+            // Validate against pattern
+            if (value && !rule.pattern.test(value)) {
+              input.classList.add('is-invalid');
+              isValid = false;
+            } else {
+              input.classList.remove('is-invalid');
+            }
+
+            // Additional length check for address and notes
+            if ((field === 'address' || field === 'notes') && value.length > 255) {
+              input.classList.add('is-invalid');
+              isValid = false;
+            }
+          });
+
+          // For admins or new rows, ensure customer_name and phone_number are non-empty
+          if (userRole !== 'manager' || isNewRow) {
+            if (!inputs.customer_name.value.trim() || !inputs.phone_number.value.trim()) {
+              [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
+              isValid = false;
+            }
+          }
+
+          if (!isValid) {
+            showToast('Please correct the invalid fields.', 'danger');
+            return;
+          }
+
+          fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast(data.message, 'success');
+              if (isNewRow) {
+                row.remove();
+              } else {
+                row.classList.remove('edit-mode');
+                row.querySelectorAll('.display-text').forEach(span => {
+                  const input = row.querySelector(`.editable-input.${span.classList[1]}`);
+                  span.textContent = input?.value || '';
+                  span.style.display = 'inline';
+                });
+                row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'none');
+                row.querySelector('.cancel-edit').style.display = 'none';
+                row.querySelector('.action-save-btn').style.display = 'none';
+                row.querySelector('.edit-callback').style.display = 'inline';
+                row.querySelector('input[name="callback_id"]')?.remove();
+                row.removeAttribute('data-edited');
+              }
+              updateAddRowButtonState();
+              setTimeout(() => window.location.reload(), 1500);
+            } else {
+              showToast(data.message, 'danger');
+            }
+          })
+          .catch(() => showToast('An error occurred while saving.', 'danger'));
+        }
+      });
+
+      // Delete callback functionality
+      document.querySelector('#tableBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-callback')) {
+          if (!confirm('Are you sure you want to delete this callback?')) {
+            return;
+          }
+          const row = e.target.closest('tr');
+          const callbackId = row.dataset.callbackId;
+          fetch('/delete_callback/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ callback_ids: [callbackId] })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast(data.message, 'success');
+              row.remove();
+              updateAddRowButtonState();
+            } else {
+              showToast(data.message, 'danger');
+            }
+          })
+          .catch(() => showToast('An error occurred while deleting.', 'danger'));
+        }
+      });
+
+      // Set timestamp when editing new row
+      document.querySelector('#tableBody').addEventListener('input', function(e) {
+        if (e.target.classList.contains('editable') && e.target.closest('[data-new-row="true"]')) {
+          const row = e.target.closest('[data-new-row="true"]');
+          setAddedAtTimestamp(row);
+        }
+      });
+
+      // Prevent copy/cut/paste for agents
+      if ('{{ user_role }}' === 'agent') {
+        document.addEventListener('copy', e => e.preventDefault());
+        document.addEventListener('cut', e => e.preventDefault());
+        document.addEventListener('paste', e => e.preventDefault());
+      }
+
+      // Initialize Add Row button state
+      updateAddRowButtonState();
+    });
+  </script>
 </body>
 </html>

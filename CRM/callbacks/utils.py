@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from .models import UserProfile
 
 def get_user_role(user):
