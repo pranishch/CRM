@@ -13,7 +13,7 @@ from datetime import datetime
 from .models import Callback, UserProfile
 from django.views.decorators.cache import never_cache
 from django.template.loader import render_to_string
-from .utils import get_user_role, can_manage_users, can_edit_all_callbacks
+from .utils import can_access_manager_dashboard, can_access_user_callbacks, get_user_role, can_manage_users, can_edit_all_callbacks
 import re
 
 from .forms import LoginForm, CustomUserCreationForm  # Import the custom LoginForm
@@ -208,12 +208,16 @@ def manage_managers(request):
     }
     return render(request, 'manage_managers.html', context)
 
-@login_required
 @csrf_protect
 def user_logout(request):
-    auth.logout(request)
-    messages.success(request, 'Logged out successfully.')
-    return redirect('login')
+    if request.method == 'POST':
+        if request.user.is_authenticated:
+            auth.logout(request)
+            messages.success(request, 'Logged out successfully.')
+        return redirect('login')
+    else:
+        # If GET request, redirect to login or show error
+        return redirect('login')
 
 @login_required
 @never_cache
@@ -289,14 +293,10 @@ def admin_dashboard(request):
 @csrf_protect
 def manager_dashboard(request, manager_id):
     manager = get_object_or_404(User, id=manager_id)
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        messages.error(request, 'Access denied.')
-        return redirect('callbacklist')
-    
-    if request.user.userprofile.role == 'manager' and request.user != manager:
+    # Use the new access control function
+    if not can_access_manager_dashboard(request.user, manager):
         messages.error(request, 'Access denied. You can only view your own dashboard.')
-        return redirect('manager_dashboard', manager_id=request.user.id)
+        return redirect('callbacklist')
     
     if request.method == 'POST':
         if not (request.user.is_superuser or 
@@ -385,8 +385,9 @@ def view_user_callbacks(request, user_id):
     target_user = get_object_or_404(User, id=user_id)
     current_user = request.user
     
-    if current_user != target_user and not (current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role in ['admin', 'manager'])):
-        messages.error(request, 'Access denied. You can only view your own callbacks.')
+    # Check if the current user is authorized to view the target user's callbacks
+    if not can_access_user_callbacks(current_user, target_user):
+        messages.error(request, 'Access denied. You can only view your own callbacks or those of authorized users.')
         return redirect('callbacklist')
     
     can_edit_all = can_edit_all_callbacks(current_user)
@@ -469,8 +470,9 @@ def callbacklist(request, user_id=None):
 
     if user_id:
         target_user = get_object_or_404(User, id=user_id)
-        if request.user != target_user and not (request.user.is_superuser or user_role in ['admin', 'manager']):
-            messages.error(request, 'Access denied. You can only view your own callbacks.')
+        # Check if the current user is authorized to view the target user's callbacks
+        if not can_access_user_callbacks(request.user, target_user):
+            messages.error(request, 'Access denied. You can only view your own callbacks or those of authorized users.')
             return redirect('callbacklist')
         callbacks = Callback.objects.filter(created_by=target_user)
         context.update({

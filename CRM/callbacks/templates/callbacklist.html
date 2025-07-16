@@ -267,7 +267,7 @@
       <header class="header">
         <div class="user-info">
           <span>{{ user_role|title }}</span>
-          <form method="post" action="/logout/" style="display: inline;">
+          <form method="post" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}
             <button type="submit" class="btn-logout" id="logoutBtn" aria-label="Logout">Logout</button>
           </form>
@@ -282,8 +282,7 @@
         {% endfor %}
       {% endif %}
       <section id="callbacks" class="content-section">
-        <h2>Callbacks Table</h2>
-        <div class="top-controls">
+      <h2>Callbacks Table of {% if is_viewing_other %}{{ target_user.username }}{% else %}{{ request.user.username }}{% endif %}</h2>        <div class="top-controls">
           <div class="search-bar">
             <select id="searchField" class="form-control">
               <option value="all" {% if search_field == 'all' %}selected{% endif %}>All Fields</option>

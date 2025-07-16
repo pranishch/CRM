@@ -28,3 +28,40 @@ def can_edit_all_callbacks(user):
     """
     role = get_user_role(user)
     return role in ['admin', 'manager']
+
+def can_access_user_callbacks(current_user, target_user):
+    """
+    Check if the current user can access the target user's callbacks.
+    Returns True if allowed, False otherwise.
+    """
+    if not current_user.is_authenticated:
+        return False
+    
+    # Superusers and admins can access any user's callbacks
+    if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
+        return True
+    
+    # Current user can access their own callbacks only
+    if current_user == target_user:
+        return True
+    
+    # No other access allowed (managers cannot access agents' callbacks, agents cannot access managers' callbacks)
+    return False
+
+def can_access_manager_dashboard(current_user, manager):
+    """
+    Check if the current user can access the manager's dashboard.
+    Returns True if allowed, False otherwise.
+    """
+    if not current_user.is_authenticated:
+        return False
+    
+    # Superusers and admins can access any manager's dashboard
+    if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
+        return True
+    
+    # Current user can access their own dashboard
+    if current_user == manager:
+        return True
+    
+    return False
