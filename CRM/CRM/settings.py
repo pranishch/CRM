@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-tj8+m4&8=$cn%#poa5%q4nhlwo$t766b)9gganxe%p-=j2!_@8'
+SECRET_KEY = 'txu-we#=u5p(9xf-cg!7k(-i6ywt4lu2x$qcq^q4f1r%%r4_2z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['callbacks.onrender.com']
+ALLOWED_HOSTS = ['crm-b6a4.onrender.com']
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'whitenoise.runserver_nostatic',
     'callbacks',
 ]
 
