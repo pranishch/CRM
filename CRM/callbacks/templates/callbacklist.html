@@ -528,8 +528,10 @@
             url.searchParams.set('page', '1'); // Reset to first page on new search
 
             fetch(url, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
+              headers: {
+                      'X-Requested-With': 'XMLHttpRequest',
+                      'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                  }            })
             .then(response => response.json())
             .then(data => {
                 // Update table body

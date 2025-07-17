@@ -38,7 +38,7 @@ def can_access_user_callbacks(current_user, target_user):
         return False
     
     # Superusers and admins can access any user's callbacks
-    if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
+    if is_admin_user(current_user):
         return True
     
     # Current user can access their own callbacks only
@@ -57,7 +57,7 @@ def can_access_manager_dashboard(current_user, manager):
         return False
     
     # Superusers and admins can access any manager's dashboard
-    if current_user.is_superuser or (hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'admin'):
+    if is_admin_user(current_user):
         return True
     
     # Current user can access their own dashboard

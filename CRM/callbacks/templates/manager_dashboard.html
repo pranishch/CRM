@@ -293,11 +293,11 @@
             </select>
             <input type="text" id="searchInput" class="form-control ms-2" placeholder="Search..." value="{{ search_query|default_if_none:'' }}">
           </div>
-          <div class="button-group">
+          <!-- <div class="button-group">
             {% if can_edit %}
               <button class="btn" id="addNewRow" aria-label="Add New Row"><i class="fas fa-plus ms-1"></i> Add Row</button>
             {% endif %}
-          </div>
+          </div> -->
         </div>
         <div class="callbacks-table-wrapper">
           <form id="callbackForm" method="post" action="{% url 'save_callbacks' %}">
@@ -504,17 +504,17 @@
         }
 
         // Add new row functionality
-        function addNewRow() {
-            const tableBody = document.querySelector('#tableBody');
-            const existingNewRow = document.querySelector('[data-new-row="true"]');
-            if (existingNewRow) return; // Prevent adding multiple new rows
-            const newRow = createNewRowTemplate();
-            tableBody.appendChild(newRow);
-            setAddedAtTimestamp(newRow);
-            const firstInput = newRow.querySelector('input');
-            if (firstInput) firstInput.focus();
-            updateAddRowButtonState();
-        }
+        // function addNewRow() {
+        //     const tableBody = document.querySelector('#tableBody');
+        //     const existingNewRow = document.querySelector('[data-new-row="true"]');
+        //     if (existingNewRow) return; // Prevent adding multiple new rows
+        //     const newRow = createNewRowTemplate();
+        //     tableBody.appendChild(newRow);
+        //     setAddedAtTimestamp(newRow);
+        //     const firstInput = newRow.querySelector('input');
+        //     if (firstInput) firstInput.focus();
+        //     updateAddRowButtonState();
+        // }
 
         // Live search and pagination functionality
         const searchInput = document.getElementById('searchInput');
@@ -741,11 +741,11 @@
         });
 
         // Add new row button
-        const addRowButton = document.getElementById('addNewRow');
-        if (addRowButton) {
-            addRowButton.addEventListener('click', addNewRow);
-            updateAddRowButtonState();
-        }
+        // const addRowButton = document.getElementById('addNewRow');
+        // if (addRowButton) {
+        //     addRowButton.addEventListener('click', addNewRow);
+        //     updateAddRowButtonState();
+        // }
 
         // Set timestamp when editing new row
         document.querySelector('#tableBody').addEventListener('input', function(e) {

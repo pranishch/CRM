@@ -1,4 +1,5 @@
 import json
+import logging
 from django.core.paginator import Paginator
 from django.contrib import messages, auth
 from django.http import JsonResponse, HttpResponseForbidden
@@ -11,9 +12,11 @@ from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from datetime import datetime
 from .models import Callback, UserProfile
+from django.contrib.auth import logout
 from django.views.decorators.cache import never_cache
+from django.db import DatabaseError, transaction
 from django.template.loader import render_to_string
-from .utils import can_access_manager_dashboard, can_access_user_callbacks, get_user_role, can_manage_users, can_edit_all_callbacks
+from .utils import can_access_manager_dashboard, can_access_user_callbacks, get_user_role, can_manage_users, can_edit_all_callbacks, is_admin_user
 import re
 
 from .forms import LoginForm, CustomUserCreationForm  # Import the custom LoginForm
@@ -57,8 +60,7 @@ def user_login(request):
 @login_required
 @csrf_protect
 def manage_users(request):
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    if not is_admin_user(request.user):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('callbacklist')
     
@@ -84,6 +86,9 @@ def manage_users(request):
         
         elif action == 'edit':
             user = get_object_or_404(User, id=user_id)
+            if user == request.user and not is_admin_user(request.user):
+                messages.error(request, 'You cannot edit your own details.')
+                return redirect('manage_users')
             username = request.POST.get('username')
             email = request.POST.get('email')
             if username and username != user.username:
@@ -98,6 +103,9 @@ def manage_users(request):
         
         elif action == 'change_role':
             user = get_object_or_404(User, id=user_id)
+            if user == request.user and not is_admin_user(request.user):
+                messages.error(request, 'You cannot change your own role.')
+                return redirect('manage_users')
             new_role = request.POST.get('new_role')
             user.groups.clear()
             if new_role in ['agent', 'manager', 'admin']:
@@ -113,29 +121,97 @@ def manage_users(request):
         
         elif action == 'reset_password':
             user = get_object_or_404(User, id=user_id)
+            if user == request.user and not is_admin_user(request.user):
+                messages.error(request, 'You cannot reset your own password.')
+                return redirect('manage_users')
             new_password = request.POST.get('new_password')
             user.set_password(new_password)
             user.save()
             messages.success(request, f'Password reset for {user.username}!')
         
+        elif action == 'edit_callback':
+            if not is_admin_user(request.user):
+                messages.error(request, 'Access denied. Admin privileges required to edit callbacks.')
+                return redirect('manage_users')
+            callback_id = request.POST.get('callback_id')
+            callback = get_object_or_404(Callback, id=callback_id)
+            name = request.POST.get('customer_name', '').strip()
+            phone = request.POST.get('phone_number', '').strip()
+            email = request.POST.get('email', '').strip()
+            address = request.POST.get('address', '').strip()
+            website = request.POST.get('website', '').strip()
+            remarks = request.POST.get('remarks', '').strip()
+            notes = request.POST.get('notes', '').strip()
+            added_at = request.POST.get('added_at')
+
+            # Validation
+            if not name or not phone:
+                messages.error(request, 'Customer name and phone number are required.')
+                return redirect('manage_users')
+            if not re.match(r'^[A-Za-z\s]+$', name):
+                messages.error(request, 'Customer name can only contain letters and spaces.')
+                return redirect('manage_users')
+            if len(name) < 2:
+                messages.error(request, 'Customer name must be at least 2 characters.')
+                return redirect('manage_users')
+            if not re.match(r'^[\+\-0-9\s\(\),./#]+$', phone):
+                messages.error(request, 'Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces.')
+                return redirect('manage_users')
+            if len(phone) < 5:
+                messages.error(request, 'Phone number must be at least 5 characters.')
+                return redirect('manage_users')
+            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                messages.error(request, 'Invalid email address.')
+                return redirect('manage_users')
+            if address and len(address) < 5:
+                messages.error(request, 'Address must be at least 5 characters if provided.')
+                return redirect('manage_users')
+            if website and not re.match(r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$', website):
+                messages.error(request, 'Invalid website URL.')
+                return redirect('manage_users')
+            if website and len(website) > 255:
+                messages.error(request, 'Website URL must not exceed 255 characters.')
+                return redirect('manage_users')
+            if notes and len(notes) > 255:
+                messages.error(request, 'Notes must not exceed 255 characters.')
+                return redirect('manage_users')
+
+            try:
+                added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S') if added_at else datetime.now()
+            except (ValueError, TypeError):
+                added_at = datetime.now()
+
+            callback.customer_name = name
+            callback.phone_number = phone
+            callback.email = email or None
+            callback.address = address or None
+            callback.website = website or None
+            callback.remarks = remarks or None
+            callback.notes = notes or None
+            callback.added_at = added_at
+            callback.full_clean()
+            callback.save()
+            messages.success(request, f'Callback {callback.id} updated successfully!')
+        
         return redirect('manage_users')
     
     users = User.objects.all().prefetch_related('userprofile', 'groups')
     form = CustomUserCreationForm()
+    callbacks = Callback.objects.filter(created_by__in=users).order_by('-added_at')
     
     context = {
         'users': users,
         'roles': ['agent', 'manager', 'admin'],
         'form': form,
         'user_role': 'admin',
+        'callbacks': callbacks,
     }
     return render(request, 'manage_users.html', context)
 
 @login_required
 @csrf_protect
 def manage_managers(request):
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    if not is_admin_user(request.user):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('callbacklist')
     
@@ -161,6 +237,9 @@ def manage_managers(request):
         
         elif action == 'edit':
             user = get_object_or_404(User, id=user_id)
+            if user == request.user and not is_admin_user(request.user):
+                messages.error(request, 'You cannot edit your own details.')
+                return redirect('manage_managers')
             username = request.POST.get('username')
             email = request.POST.get('email')
             if username and username != user.username:
@@ -175,6 +254,9 @@ def manage_managers(request):
         
         elif action == 'change_role':
             user = get_object_or_404(User, id=user_id)
+            if user == request.user and not is_admin_user(request.user):
+                messages.error(request, 'You cannot change your own role.')
+                return redirect('manage_managers')
             new_role = request.POST.get('new_role')
             user.groups.clear()
             if new_role in ['agent', 'manager', 'admin']:
@@ -190,46 +272,173 @@ def manage_managers(request):
         
         elif action == 'reset_password':
             user = get_object_or_404(User, id=user_id)
+            if user == request.user and not is_admin_user(request.user):
+                messages.error(request, 'You cannot reset your own password.')
+                return redirect('manage_managers')
             new_password = request.POST.get('new_password')
             user.set_password(new_password)
             user.save()
             messages.success(request, f'Password reset for {user.username}!')
         
+        elif action == 'edit_callback':
+            if not is_admin_user(request.user):
+                messages.error(request, 'Access denied. Admin privileges required to edit callbacks.')
+                return redirect('manage_managers')
+            callback_id = request.POST.get('callback_id')
+            callback = get_object_or_404(Callback, id=callback_id)
+            name = request.POST.get('customer_name', '').strip()
+            phone = request.POST.get('phone_number', '').strip()
+            email = request.POST.get('email', '').strip()
+            address = request.POST.get('address', '').strip()
+            website = request.POST.get('website', '').strip()
+            remarks = request.POST.get('remarks', '').strip()
+            notes = request.POST.get('notes', '').strip()
+            added_at = request.POST.get('added_at')
+
+            # Validation
+            if not name or not phone:
+                messages.error(request, 'Customer name and phone number are required.')
+                return redirect('manage_managers')
+            if not re.match(r'^[A-Za-z\s]+$', name):
+                messages.error(request, 'Customer name can only contain letters and spaces.')
+                return redirect('manage_managers')
+            if len(name) < 2:
+                messages.error(request, 'Customer name must be at least 2 characters.')
+                return redirect('manage_managers')
+            if not re.match(r'^[\+\-0-9\s\(\),./#]+$', phone):
+                messages.error(request, 'Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces.')
+                return redirect('manage_managers')
+            if len(phone) < 5:
+                messages.error(request, 'Phone number must be at least 5 characters.')
+                return redirect('manage_managers')
+            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                messages.error(request, 'Invalid email address.')
+                return redirect('manage_managers')
+            if address and len(address) < 5:
+                messages.error(request, 'Address must be at least 5 characters if provided.')
+                return redirect('manage_managers')
+            if website and not re.match(r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$', website):
+                messages.error(request, 'Invalid website URL.')
+                return redirect('manage_managers')
+            if website and len(website) > 255:
+                messages.error(request, 'Website URL must not exceed 255 characters.')
+                return redirect('manage_managers')
+            if notes and len(notes) > 255:
+                messages.error(request, 'Notes must not exceed 255 characters.')
+                return redirect('manage_managers')
+
+            try:
+                added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S') if added_at else datetime.now()
+            except (ValueError, TypeError):
+                added_at = datetime.now()
+
+            callback.customer_name = name
+            callback.phone_number = phone
+            callback.email = email or None
+            callback.address = address or None
+            callback.website = website or None
+            callback.remarks = remarks or None
+            callback.notes = notes or None
+            callback.added_at = added_at
+            callback.full_clean()
+            callback.save()
+            messages.success(request, f'Callback {callback.id} updated successfully!')
+        
         return redirect('manage_managers')
     
     managers = User.objects.filter(userprofile__role='manager').prefetch_related('userprofile', 'groups')
     form = CustomUserCreationForm()
+    callbacks = Callback.objects.filter(created_by__in=managers).order_by('-added_at')
     
     context = {
         'managers': managers,
         'roles': ['agent', 'manager', 'admin'],
         'form': form,
         'user_role': 'admin',
+        'callbacks': callbacks,
     }
     return render(request, 'manage_managers.html', context)
 
+
 @csrf_protect
+@never_cache
 def user_logout(request):
-    if request.method == 'POST':
-        if request.user.is_authenticated:
-            auth.logout(request)
-            messages.success(request, 'Logged out successfully.')
-        return redirect('login')
-    else:
-        # If GET request, redirect to login or show error
-        return redirect('login')
+    logout(request)
+    return redirect('login')
 
 @login_required
 @never_cache
 def admin_dashboard(request):
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    if not is_admin_user(request.user):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('callbacklist')
     
-    if not request.user.has_perm('auth.manage_users'):
-        messages.error(request, 'Access denied. You lack the required permissions.')
-        return redirect('callbacklist')
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'edit_callback':
+            if not is_admin_user(request.user):
+                messages.error(request, 'Access denied. Admin privileges required to edit callbacks.')
+                return redirect('admin_dashboard')
+            callback_id = request.POST.get('callback_id')
+            callback = get_object_or_404(Callback, id=callback_id)
+            name = request.POST.get('customer_name', '').strip()
+            phone = request.POST.get('phone_number', '').strip()
+            email = request.POST.get('email', '').strip()
+            address = request.POST.get('address', '').strip()
+            website = request.POST.get('website', '').strip()
+            remarks = request.POST.get('remarks', '').strip()
+            notes = request.POST.get('notes', '').strip()
+            added_at = request.POST.get('added_at')
+
+            # Validation
+            if not name or not phone:
+                messages.error(request, 'Customer name and phone number are required.')
+                return redirect('admin_dashboard')
+            if not re.match(r'^[A-Za-z\s]+$', name):
+                messages.error(request, 'Customer name can only contain letters and spaces.')
+                return redirect('admin_dashboard')
+            if len(name) < 2:
+                messages.error(request, 'Customer name must be at least 2 characters.')
+                return redirect('admin_dashboard')
+            if not re.match(r'^[\+\-0-9\s\(\),./#]+$', phone):
+                messages.error(request, 'Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces.')
+                return redirect('admin_dashboard')
+            if len(phone) < 5:
+                messages.error(request, 'Phone number must be at least 5 characters.')
+                return redirect('admin_dashboard')
+            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                messages.error(request, 'Invalid email address.')
+                return redirect('admin_dashboard')
+            if address and len(address) < 5:
+                messages.error(request, 'Address must be at least 5 characters if provided.')
+                return redirect('admin_dashboard')
+            if website and not re.match(r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$', website):
+                messages.error(request, 'Invalid website URL.')
+                return redirect('admin_dashboard')
+            if website and len(website) > 255:
+                messages.error(request, 'Website URL must not exceed 255 characters.')
+                return redirect('admin_dashboard')
+            if notes and len(notes) > 255:
+                messages.error(request, 'Notes must not exceed 255 characters.')
+                return redirect('admin_dashboard')
+
+            try:
+                added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S') if added_at else datetime.now()
+            except (ValueError, TypeError):
+                added_at = datetime.now()
+
+            callback.customer_name = name
+            callback.phone_number = phone
+            callback.email = email or None
+            callback.address = address or None
+            callback.website = website or None
+            callback.remarks = remarks or None
+            callback.notes = notes or None
+            callback.added_at = added_at
+            callback.full_clean()
+            callback.save()
+            messages.success(request, f'Callback {callback.id} updated successfully!')
+            return redirect('admin_dashboard')
     
     search_query = request.GET.get('q', '').strip()
     search_field = request.GET.get('search_field', 'all')
@@ -288,6 +497,7 @@ def admin_dashboard(request):
         })
     
     return render(request, 'admin_dashboard.html', context)
+
 
 @login_required
 @csrf_protect
@@ -385,26 +595,17 @@ def view_user_callbacks(request, user_id):
     target_user = get_object_or_404(User, id=user_id)
     current_user = request.user
     
-    # Check if the current user is authorized to view the target user's callbacks
     if not can_access_user_callbacks(current_user, target_user):
         messages.error(request, 'Access denied. You can only view your own callbacks or those of authorized users.')
         return redirect('callbacklist')
     
-    can_edit_all = can_edit_all_callbacks(current_user)
+    can_edit_all = is_admin_user(current_user)
     can_delete = can_edit_all
-    can_edit = can_edit_all or current_user == target_user or get_user_role(current_user) == 'manager'
+    can_edit = can_edit_all or current_user == target_user  # Only admins or the user themselves can edit
     search_query = request.GET.get('q', '').strip()
     search_field = request.GET.get('search_field', 'customer_name')
 
     if can_edit_all:
-        callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
-    elif hasattr(current_user, 'userprofile') and current_user.userprofile.role == 'manager':
-        if hasattr(target_user, 'userprofile') and target_user.userprofile.role != 'agent':
-            messages.error(request, 'Access denied.')
-            return redirect('manager_dashboard', manager_id=current_user.id)
-        if target_user.userprofile.manager != current_user:
-            messages.error(request, 'Access denied. You can only view callbacks of your assigned agents.')
-            return redirect('manager_dashboard', manager_id=current_user.id)
         callbacks = Callback.objects.filter(created_by=target_user).order_by('-added_at')
     else:
         if current_user != target_user:
@@ -451,9 +652,9 @@ def view_user_callbacks(request, user_id):
 @csrf_protect
 def callbacklist(request, user_id=None):
     user_role = get_user_role(request.user)
-    can_manage = can_manage_users(request.user)
-    can_edit_all = can_edit_all_callbacks(request.user)
-    can_edit = user_role in ['admin', 'agent', 'manager']
+    can_manage = is_admin_user(request.user)
+    can_edit_all = is_admin_user(request.user)
+    can_edit = can_edit_all or user_role == 'agent'
     can_delete = can_edit_all
     search_query = request.GET.get('q', '').strip()
     search_field = request.GET.get('search_field', 'customer_name')
@@ -470,7 +671,6 @@ def callbacklist(request, user_id=None):
 
     if user_id:
         target_user = get_object_or_404(User, id=user_id)
-        # Check if the current user is authorized to view the target user's callbacks
         if not can_access_user_callbacks(request.user, target_user):
             messages.error(request, 'Access denied. You can only view your own callbacks or those of authorized users.')
             return redirect('callbacklist')
@@ -482,11 +682,12 @@ def callbacklist(request, user_id=None):
     else:
         if user_role == 'agent':
             callbacks = Callback.objects.filter(created_by=request.user)
-        else:
+        elif user_role == 'manager':
+            callbacks = Callback.objects.filter(manager=request.user)
+        else:  # admin
             callbacks = Callback.objects.all()
         context.update({'is_viewing_other': False})
 
-    # Apply search filters if they exist
     if search_query:
         if search_field == 'all':
             callbacks = callbacks.filter(
@@ -505,10 +706,8 @@ def callbacklist(request, user_id=None):
         elif search_field == 'email':
             callbacks = callbacks.filter(email__icontains=search_query)
 
-    # Consistent ordering
     callbacks = callbacks.order_by('-added_at')
     
-    # Pagination
     paginator = Paginator(callbacks, 20)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
@@ -518,9 +717,7 @@ def callbacklist(request, user_id=None):
         'callbacks': page_obj.object_list,
     })
 
-    # Handle AJAX request for search
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        from django.template.loader import render_to_string
         callbacks_html = render_to_string('callbacklist_table_body.html', context, request=request)
         pagination_html = render_to_string('callbacklist_pagination.html', context, request=request)
         return JsonResponse({
@@ -530,16 +727,20 @@ def callbacklist(request, user_id=None):
 
     return render(request, 'callbacklist.html', context)
 
+logger = logging.getLogger(__name__)
 @login_required
 @csrf_protect
 def save_callbacks(request):
     if request.method != 'POST':
+        logger.error("Invalid request method")
         return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
     try:
         user = request.user
         user_role = get_user_role(user)
-        can_edit_all = can_edit_all_callbacks(user)
+        can_edit_all = is_admin_user(user)
+
+        logger.debug(f"User: {user.username}, Role: {user_role}, Can edit all: {can_edit_all}, POST data: {request.POST}")
 
         content_type = request.headers.get('Content-Type', '').lower()
         if 'application/json' in content_type:
@@ -561,120 +762,156 @@ def save_callbacks(request):
             }]
 
         saved_count = 0
-        for callback_data in data:
-            callback_id = callback_data.get('callback_id')
-            target_user_id = callback_data.get('target_user_id')
-            if target_user_id and not can_edit_all:
-                return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
-            
-            callback_owner = get_object_or_404(User, id=target_user_id) if target_user_id and can_edit_all else user
+        saved_callback_ids = []
+        with transaction.atomic():
+            for callback_data in data:
+                callback_id = callback_data.get('callback_id')
+                target_user_id = callback_data.get('target_user_id')
 
-            name = callback_data.get('customer_name', '').strip()
-            phone = callback_data.get('phone_number', '').strip()
-            email = callback_data.get('email', '').strip()
-            address = callback_data.get('address', '').strip()
-            website = callback_data.get('website', '').strip()
-            remarks = callback_data.get('remarks', '').strip()
-            notes = callback_data.get('notes', '').strip()
-            added_at = callback_data.get('added_at')
+                # Determine callback owner
+                if target_user_id and can_edit_all:
+                    try:
+                        callback_owner = User.objects.get(id=target_user_id)
+                        if not can_access_user_callbacks(user, callback_owner):
+                            logger.error(f"User {user.username} attempted to edit callbacks for unauthorized user {callback_owner.username}")
+                            raise PermissionDenied("You are not authorized to edit callbacks for this user")
+                    except User.DoesNotExist:
+                        logger.error(f"Target user ID {target_user_id} does not exist")
+                        raise ValueError(f"Target user ID {target_user_id} does not exist")
+                else:
+                    callback_owner = user
 
-            if not name or not phone:
-                raise ValueError("Customer name and phone number are required")
-            if not re.match(r'^[A-Za-z\s]+$', name):
-                raise ValueError("Customer name can only contain letters and spaces")
-            if len(name) < 2:
-                raise ValueError("Customer name must be at least 2 characters")
-            if not re.match(r'^[\+\-0-9\s\(\),./#]+$', phone):
-                raise ValueError("Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces")
-            if len(phone) < 5:
-                raise ValueError("Phone number must be at least 5 characters")
-            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-                raise ValueError("Invalid email address")
-            if address and len(address) < 5:
-                raise ValueError("Address must be at least 5 characters if provided")
-            if website and not re.match(r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$', website):
-                raise ValueError("Invalid website URL")
-            if website and len(website) > 255:
-                raise ValueError("Website URL must not exceed 255 characters")
-            if notes and len(notes) > 255:
-                raise ValueError("Notes must not exceed 255 characters")
+                name = callback_data.get('customer_name', '').strip()
+                phone = callback_data.get('phone_number', '').strip()
+                email = callback_data.get('email', '').strip()
+                address = callback_data.get('address', '').strip()
+                website = callback_data.get('website', '').strip()
+                remarks = callback_data.get('remarks', '').strip()
+                notes = callback_data.get('notes', '').strip()
+                added_at = callback_data.get('added_at')
 
-            try:
-                added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S') if added_at else datetime.now()
-            except (ValueError, TypeError):
-                added_at = datetime.now()
+                # Validation
+                if not name or not phone:
+                    raise ValueError("Customer name and phone number are required")
+                if not re.match(r'^[A-Za-z\s]+$', name):
+                    raise ValueError("Customer name can only contain letters and spaces")
+                if len(name) < 2:
+                    raise ValueError("Customer name must be at least 2 characters")
+                if not re.match(r'^[\+\-0-9\s\(\),./#]+$', phone):
+                    raise ValueError("Phone number can only contain numbers, +, -, (), comma, period, /, #, and spaces")
+                if len(phone) < 5:
+                    raise ValueError("Phone number must be at least 5 characters")
+                if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                    raise ValueError("Invalid email address")
+                if address and len(address) < 5:
+                    raise ValueError("Address must be at least 5 characters if provided")
+                if website and not re.match(r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$', website):
+                    raise ValueError("Invalid website URL")
+                if website and len(website) > 255:
+                    raise ValueError("Website URL must not exceed 255 characters")
+                if notes and len(notes) > 255:
+                    raise ValueError("Notes must not exceed 255 characters")
 
-            if callback_id:
-                callback = get_object_or_404(Callback, id=callback_id)
-                if user_role == 'manager' and callback.manager != user:
-                    raise PermissionDenied("You can only edit callbacks assigned to you")
-                callback.customer_name = name
-                callback.phone_number = phone
-                callback.email = email
-                callback.address = address
-                callback.website = website
-                callback.remarks = remarks
-                callback.notes = notes
-                callback.added_at = added_at
-                callback.save()
-                saved_count += 1
-            else:
-                if user_role not in ['admin', 'agent']:
-                    raise ValueError("Only admins and agents can create new callbacks")
-                callback = Callback.objects.create(
-                    created_by=callback_owner,
-                    added_at=added_at,
-                    customer_name=name,
-                    phone_number=phone,
-                    email=email,
-                    address=address,
-                    website=website,
-                    remarks=remarks,
-                    notes=notes
-                )
-                saved_count += 1
+                try:
+                    added_at = datetime.strptime(added_at, '%Y-%m-%d %H:%M:%S') if added_at else datetime.now()
+                except (ValueError, TypeError):
+                    added_at = datetime.now()
+
+                if callback_id:
+                    # Editing existing callback
+                    callback = get_object_or_404(Callback, id=callback_id)
+                    if not can_edit_all:  # Only apply restrictions for non-admins
+                        if user_role == 'manager' and callback.manager != user:
+                            logger.error(f"Manager {user.username} attempted to edit unassigned callback {callback_id}")
+                            raise PermissionDenied("You can only edit callbacks assigned to you")
+                        if user_role == 'agent' and callback.created_by != user:
+                            logger.error(f"Agent {user.username} attempted to edit callback {callback_id} not owned by them")
+                            raise PermissionDenied("You can only edit your own callbacks")
+                    callback.customer_name = name
+                    callback.phone_number = phone
+                    callback.email = email or None
+                    callback.address = address or None
+                    callback.website = website or None
+                    callback.remarks = remarks or None
+                    callback.notes = notes or None
+                    callback.added_at = added_at
+                    callback.save()
+                    logger.info(f"Callback {callback_id} updated by {user.username}")
+                    saved_count += 1
+                    saved_callback_ids.append(callback.id)
+                else:
+                    # Creating new callback
+                    if user_role not in ['admin', 'agent']:
+                        logger.error(f"User {user.username} with role {user_role} attempted to create new callback")
+                        raise PermissionDenied("Only admins and agents can create new callbacks")
+                    callback = Callback(
+                        created_by=callback_owner,
+                        manager=None,  # Managers set via assign_manager view
+                        added_at=added_at,
+                        customer_name=name,
+                        phone_number=phone,
+                        email=email or None,
+                        address=address or None,
+                        website=website or None,
+                        remarks=remarks or None,
+                        notes=notes or None
+                    )
+                    callback.full_clean()
+                    callback.save()
+                    logger.info(f"New callback {callback.id} created by {user.username} for user {callback_owner.username}")
+                    if not Callback.objects.filter(id=callback.id).exists():
+                        logger.error(f"Callback {callback.id} was not saved in the database")
+                        raise DatabaseError(f"Callback {callback.id} failed to save")
+                    saved_count += 1
+                    saved_callback_ids.append(callback.id)
 
         return JsonResponse({
             'status': 'success',
             'message': f'Successfully saved {saved_count} callback(s).',
-            'saved_count': saved_count
+            'saved_count': saved_count,
+            'callback_ids': saved_callback_ids,
+            'target_user_id': target_user_id if can_edit_all else user.id
         })
 
     except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     except PermissionDenied as e:
+        logger.error(f"Permission denied: {str(e)}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=403)
+    except ValidationError as e:
+        logger.error(f"Model validation error: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': f'Model validation error: {str(e)}'}, status=400)
+    except DatabaseError as e:
+        logger.error(f"Database error: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': f'Database error: {str(e)}'}, status=500)
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=400)
-    
+        logger.error(f"Unexpected error: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=500)
+
 @login_required
 @csrf_protect
 def delete_callback(request):
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    if not is_admin_user(request.user):
         return JsonResponse({'status': 'error', 'message': 'Access denied. Admin privileges required.'}, status=403)
     
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
 
     try:
-        # Expect JSON payload with callback_ids
         data = json.loads(request.body)
         callback_ids = data.get('callback_ids', [])
         
-        # Ensure callback_ids is a list
         if not isinstance(callback_ids, list):
             callback_ids = [callback_ids] if callback_ids else []
         
         if not callback_ids:
             return JsonResponse({'status': 'error', 'message': 'No callbacks selected for deletion.'}, status=400)
 
-        # Ensure all IDs are valid integers
         callback_ids = [str(id) for id in callback_ids if id and str(id).isdigit()]
         if not callback_ids:
             return JsonResponse({'status': 'error', 'message': 'Invalid callback IDs provided.'}, status=400)
 
-        # Delete callbacks (admin can delete any callback)
         deleted_count = Callback.objects.filter(id__in=callback_ids).delete()[0]
 
         if deleted_count == 0:
@@ -710,8 +947,7 @@ def delete_user(request, user_id):
 @login_required
 @csrf_protect
 def assign_manager(request):
-    if not (request.user.is_superuser or 
-            (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    if not is_admin_user(request.user):
         return JsonResponse({'status': 'error', 'message': 'Access denied. Admin privileges required.'}, status=403)
     
     if request.method != 'POST':
@@ -749,4 +985,3 @@ def assign_manager(request):
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Error: {str(e)}'}, status=500)
-    
