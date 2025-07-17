@@ -25,9 +25,8 @@ SECRET_KEY = 'txu-we#=u5p(9xf-cg!7k(-i6ywt4lu2x$qcq^q4f1r%%r4_2z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-
 ALLOWED_HOSTS = ['crm-b6a4.onrender.com']
-
+CSRF_TRUSTED_ORIGINS = ['https://crm-b6a4.onrender.com']
 
 # Application definition
 
@@ -112,8 +111,9 @@ import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',  # Fallback for local development
-        conn_max_age=600
+        default=os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')),
+        conn_max_age=600,
+        conn_health_checks=True
     )
 }
 
