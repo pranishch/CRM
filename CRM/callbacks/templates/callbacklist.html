@@ -282,8 +282,7 @@
         {% endfor %}
       {% endif %}
       <section id="callbacks" class="content-section">
-        <h2>Callbacks for {{ target_user.username }}</h2>
-        <div class="top-controls">
+      <h2>Callbacks Table of {% if is_viewing_other %}{{ target_user.username }}{% else %}{{ request.user.username }}{% endif %}</h2>        <div class="top-controls">
           <div class="search-bar">
             <select id="searchField" class="form-control">
               <option value="all" {% if search_field == 'all' %}selected{% endif %}>All Fields</option>
@@ -294,16 +293,18 @@
             <input type="text" id="searchInput" class="form-control ms-2" placeholder="Search..." value="{{ search_query|default_if_none:'' }}">
           </div>
           <div class="button-group">
-            {% if can_edit and user_role == 'admin' %}
-              <button class="btn" id="addNewRow" aria-label="Add New Row"><i class="fas fa-plus me-1"></i> Add Row</button>
+            {% if can_edit %}
+              <button class="btn" id="addNewRow" aria-label="Add New Row" disabled><i class="fas fa-plus ms-1"></i> Add Row</button>
             {% endif %}
           </div>
         </div>
         <div class="callbacks-table-wrapper">
           <form id="callbackForm" method="post" action="{% url 'save_callbacks' %}">
             {% csrf_token %}
-            <input type="hidden" name="target_user_id" value="{{ target_user.id }}">
-            <table id="callbacksTable" class="table table-hover">
+            {% if is_viewing_other %}
+              <input type="hidden" name="target_user_id" value="{{ target_user.id }}">
+            {% endif %}
+            <table id="callbacksTable">
               <thead>
                 <tr>
                   <th>Customer Name</th>
@@ -321,28 +322,28 @@
                   <tr data-callback-id="{{ callback.id }}" class="callback-row">
                     <td>
                       <input type="hidden" name="added_at" class="added-at-input" value="{{ callback.added_at|date:'Y-m-d H:i:s' }}">
-                      <span class="display-text name-input">{{ callback.customer_name|default_if_none:'' }}</span>
-                      <input type="text" class="editable-input name-input form-control form-control-sm" style="display: none;" name="customer_name" maxlength="100" pattern="[A-Za-z\s]+" title="Only alphabetical characters allowed" value="{{ callback.customer_name|default_if_none:'' }}">
+                      <span class="display text name-input">{{ callback.customer_name|default_if_none:'' }}</span>
+                      <input type="text" class="editable-input name-input" style="display: none;" name="customer_name" maxlength="100" pattern="[A-Za-z\s]+" title="Only alphabetical characters allowed" value="{{ callback.customer_name|default_if_none:'' }}">
                     </td>
-                    <td>
+                      <td>
                       <span class="display-text phone-input">{{ callback.phone_number|default_if_none:'' }}</span>
-                      <input type="text" class="editable-input phone-input form-control form-control-sm" style="display: none;" name="phone_number" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" value="{{ callback.phone_number|default_if_none:'' }}">
+                      <input type="text" class="editable-input phone-input" style="display: none;" name="phone_number" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" value="{{ callback.phone_number|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text email-input">{{ callback.email|default_if_none:'' }}</span>
-                      <input type="email" class="editable-input email-input form-control form-control-sm" style="display: none;" name="email" maxlength="100" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Enter a valid email address (e.g., example@domain.com)" value="{{ callback.email|default_if_none:'' }}">
+                      <input type="email" class="editable-input email-input" style="display: none;" name="email" maxlength="100" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Enter a valid email address (e.g., example@domain.com)" value="{{ callback.email|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text address-input">{{ callback.address|default_if_none:'' }}</span>
-                      <textarea class="editable-input address-input form-control form-control-sm" style="display: none;" name="address" rows="1" maxlength="255">{{ callback.address|default_if_none:'' }}</textarea>
+                      <textarea class="editable-input address-input" style="display: none;" name="address" rows="1" maxlength="255">{{ callback.address|default_if_none:'' }}</textarea>
                     </td>
                     <td>
                       <span class="display-text website-input">{{ callback.website|default_if_none:'' }}</span>
-                      <input type="url" class="editable externo de la vista del usuarioeditable-input website-input form-control form-control-sm" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
+                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text remarks-input">{{ callback.remarks|default_if_none:'' }}</span>
-                      <select class="editable-input remarks-input form-control form-control-sm" style="display: none;" name="remarks">
+                      <select class="editable-input remarks-input" style="display: none;" name="remarks">
                         <option value="" {% if not callback.remarks %}selected{% endif %}>Select</option>
                         <option value="Callback" {% if callback.remarks == "Callback" %}selected{% endif %}>Callback</option>
                         <option value="Pre-sale" {% if callback.remarks == "Pre-sale" %}selected{% endif %}>Pre-sale</option>
@@ -352,22 +353,18 @@
                     </td>
                     <td>
                       <span class="display-text notes-input">{{ callback.notes|default_if_none:'' }}</span>
-                      <textarea class="editable-input notes-input form-control form-control-sm" style="display: none;" name="notes" rows="1" maxlength="255">{{ callback.notes|default_if_none:'' }}</textarea>
+                      <textarea class="editable-input notes-input" style="display: none;" name="notes" rows="1" maxlength="255">{{ callback.notes|default_if_none:'' }}</textarea>
                     </td>
                     <td>
-                      {% if user_role == 'admin' or user_role == 'manager' %}
+                      {% if can_edit and user_role == 'agent' or user_role == 'admin' %}
                         <i class="fas fa-edit action-icon edit-callback" title="Edit" aria-label="Edit Callback"></i>
                         <i class="fas fa-times action-icon cancel-edit" title="Cancel" style="display: none;" aria-label="Cancel Edit"></i>
-                        <button type="button" class="action-save-btn btn btn-sm btn-outline-success" style="display: none;" aria-label="Save Row">Save</button>
+                        <button type="button" class="action-save-btn" style="display: none;" aria-label="Save Row">Save</button>
                       {% endif %}
                       {% if user_role == 'admin' %}
                         <i class="fas fa-trash action-icon delete-callback" title="Delete" aria-label="Delete Callback"></i>
                       {% endif %}
                     </td>
-                  </tr>
-                {% empty %}
-                  <tr>
-                    <td colspan="8" class="text-center">No callbacks found for {{ target_user.username }}.</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -406,10 +403,11 @@
     <div id="saveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body"></div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white ms-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -778,3 +776,4 @@
     });
   </script>
 </body>
+</html>
