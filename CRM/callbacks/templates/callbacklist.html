@@ -338,7 +338,7 @@
                     </td>
                     <td>
                       <span class="display-text website-input">{{ callback.website|default_if_none:'' }}</span>
-                      <input type="url" class="editable-input website-input form-control form-control-sm" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
+                      <input type="url" class="editable externo de la vista del usuarioeditable-input website-input form-control form-control-sm" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text remarks-input">{{ callback.remarks|default_if_none:'' }}</span>
@@ -535,26 +535,7 @@
       };
 
       function performSearch() {
-        const query = searchInput.value.trim();
-        const field = searchField.value;
-        const url = new URL(window.location.href);
-        url.searchParams.set('q', query);
-        url.searchParams.set('search_field', field);
-        url.searchParams.set('page', '1'); // Reset to first page on new search
-
-        fetch(url, {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          tableBody.innerHTML = data.callbacks_html;
-          pagination.innerHTML = data.pagination_html;
-          updateAddRowButtonState();
-        })
-        .catch(() => showToast('An error occurred while searching.', 'danger'));
+        window.loadPage(1); // Reset to first page on search
       }
 
       // Debounce to prevent excessive calls
@@ -797,4 +778,3 @@
     });
   </script>
 </body>
-</html>
