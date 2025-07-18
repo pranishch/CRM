@@ -645,13 +645,13 @@
                 if (!inputs.customer_name.value.trim() || !inputs.phone_number.value.trim()) {
                     [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
                     isValid = false;
-                } else if (!/^[A-Za-z\s]+$/.test(inputs.customer_name.value.trim()) || !/^[\+\-\(\),./#0-9\s]+$/.test(inputs.phone_number.value.trim())) {
+                } else if (!/^[A-Za-z\s]+$/.test(inputs.customer_name.value.trim()) || !/^[\+\-(),.#0-9 ]+$/.test(inputs.phone_number.value.trim())) {
                     [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
                     isValid = false;
                 } else {
                     [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.remove('is-invalid'));
                 }
-                if (inputs.email.value.trim() && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(inputs.email.value.trim())) {
+                if (inputs.email.value.trim() && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(inputs.email.value.trim())) {
                     inputs.email.classList.add('is-invalid');
                     isValid = false;
                 } else {
