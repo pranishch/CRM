@@ -451,28 +451,36 @@ def admin_dashboard(request):
     all_callbacks = Callback.objects.all().order_by('-added_at').prefetch_related('created_by__userprofile__manager')
     
     if search_query:
-        if search_field == 'all':
-            all_callbacks = all_callbacks.filter(
-                Q(customer_name__icontains=search_query) |
-                Q(phone_number__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(address__icontains=search_query) |
-                Q(website__icontains=search_query) |
-                Q(remarks__icontains=search_query) |
-                Q(notes__icontains=search_query)
-            )
-        elif search_field == 'customer_name':
-            all_callbacks = all_callbacks.filter(customer_name__icontains=search_query)
-        elif search_field == 'phone_number':
-            all_callbacks = all_callbacks.filter(phone_number__icontains=search_query)
-        elif search_field == 'email':
-            all_callbacks = all_callbacks.filter(email__icontains=search_query)
+        try:
+            if search_field == 'all':
+                all_callbacks = all_callbacks.filter(
+                    Q(customer_name__icontains=search_query) |
+                    Q(phone_number__icontains=search_query) |
+                    Q(email__icontains=search_query) |
+                    Q(address__icontains=search_query) |
+                    Q(website__icontains=search_query) |
+                    Q(remarks__icontains=search_query) |
+                    Q(notes__icontains=search_query)
+                )
+            elif search_field == 'customer_name':
+                all_callbacks = all_callbacks.filter(customer_name__icontains=search_query)
+            elif search_field == 'phone_number':
+                all_callbacks = all_callbacks.filter(phone_number__icontains=search_query)
+            elif search_field == 'email':
+                all_callbacks = all_callbacks.filter(email__icontains=search_query)
+        except Exception as e:
+            messages.error(request, 'An error occurred while processing the search query.')
+            return JsonResponse({'status': 'error', 'message': 'Invalid search query'}, status=400) if request.headers.get('X-Requested-With') == 'XMLHttpRequest' else redirect('admin_dashboard')
     
     total_callbacks = all_callbacks.count()
     
     paginator = Paginator(all_callbacks, 20)
     page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    
+    try:
+        page_obj = paginator.page(page_number)
+    except:
+        page_obj = paginator.page(1)  # Fallback to page 1 if invalid page number
     
     context = {
         'users': users,
@@ -488,13 +496,20 @@ def admin_dashboard(request):
     }
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        callbacks_html = render_to_string('admin_dashboard_table_body.html', context, request=request)
-        pagination_html = render_to_string('admin_dashboard_pagination.html', context, request=request)
-        return JsonResponse({
-            'callbacks_html': callbacks_html,
-            'pagination_html': pagination_html,
-            'total_callbacks': total_callbacks
-        })
+        try:
+            callbacks_html = render_to_string('admin_dashboard_table_body.html', context, request=request)
+            pagination_html = render_to_string('admin_dashboard_pagination.html', context, request=request)
+            return JsonResponse({
+                'status': 'success',
+                'callbacks_html': callbacks_html,
+                'pagination_html': pagination_html,
+                'total_callbacks': total_callbacks
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Error rendering table content'
+            }, status=500)
     
     return render(request, 'admin_dashboard.html', context)
 
@@ -689,28 +704,36 @@ def callbacklist(request, user_id=None):
         context.update({'is_viewing_other': False})
 
     if search_query:
-        if search_field == 'all':
-            callbacks = callbacks.filter(
-                Q(customer_name__icontains=search_query) |
-                Q(phone_number__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(address__icontains=search_query) |
-                Q(website__icontains=search_query) |
-                Q(remarks__icontains=search_query) |
-                Q(notes__icontains=search_query)
-            )
-        elif search_field == 'customer_name':
-            callbacks = callbacks.filter(customer_name__icontains=search_query)
-        elif search_field == 'phone_number':
-            callbacks = callbacks.filter(phone_number__icontains=search_query)
-        elif search_field == 'email':
-            callbacks = callbacks.filter(email__icontains=search_query)
+        try:
+            if search_field == 'all':
+                callbacks = callbacks.filter(
+                    Q(customer_name__icontains=search_query) |
+                    Q(phone_number__icontains=search_query) |
+                    Q(email__icontains=search_query) |
+                    Q(address__icontains=search_query) |
+                    Q(website__icontains=search_query) |
+                    Q(remarks__icontains=search_query) |
+                    Q(notes__icontains=search_query)
+                )
+            elif search_field == 'customer_name':
+                callbacks = callbacks.filter(customer_name__icontains=search_query)
+            elif search_field == 'phone_number':
+                callbacks = callbacks.filter(phone_number__icontains=search_query)
+            elif search_field == 'email':
+                callbacks = callbacks.filter(email__icontains=search_query)
+        except Exception as e:
+            messages.error(request, 'An error occurred while processing the search query.')
+            return JsonResponse({'status': 'error', 'message': 'Invalid search query'}, status=400) if request.headers.get('X-Requested-With') == 'XMLHttpRequest' else redirect('callbacklist')
 
     callbacks = callbacks.order_by('-added_at')
     
     paginator = Paginator(callbacks, 20)
     page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    
+    try:
+        page_obj = paginator.page(page_number)
+    except:
+        page_obj = paginator.page(1)  # Fallback to page 1 if invalid page number
     
     context.update({
         'page_obj': page_obj,
@@ -718,12 +741,20 @@ def callbacklist(request, user_id=None):
     })
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        callbacks_html = render_to_string('callbacklist_table_body.html', context, request=request)
-        pagination_html = render_to_string('callbacklist_pagination.html', context, request=request)
-        return JsonResponse({
-            'callbacks_html': callbacks_html,
-            'pagination_html': pagination_html
-        })
+        try:
+            callbacks_html = render_to_string('callbacklist_table_body.html', context, request=request)
+            pagination_html = render_to_string('callbacklist_pagination.html', context, request=request)
+            return JsonResponse({
+                'status': 'success',
+                'callbacks_html': callbacks_html,
+                'pagination_html': pagination_html,
+                'total_callbacks': callbacks.count()
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Error rendering table content'
+            }, status=500)
 
     return render(request, 'callbacklist.html', context)
 
