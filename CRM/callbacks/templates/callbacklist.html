@@ -411,369 +411,351 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Sanitize input to prevent XSS
-      function sanitizeInput(value) {
-        const div = document.createElement('div');
-        div.textContent = value || '';
-        return div.innerHTML;
-      }
-
-      // Show toast notification
-      function showToast(message, type) {
-        const toastEl = document.getElementById('saveToast');
-        if (!toastEl) return;
-        const toastBody = toastEl.querySelector('.toast-body');
-        toastBody.textContent = sanitizeInput(message);
-        toastEl.classList.remove('bg-success', 'bg-danger');
-        toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
-        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-        toast.show();
-      }
-
-      // Check if any rows are in edit mode or unsaved
-      function updateAddRowButtonState() {
-        const addRowButton = document.getElementById('addNewRow');
-        if (!addRowButton) return;
-        const unsavedRows = document.querySelectorAll('.edit-mode, [data-new-row="true"]');
-        addRowButton.disabled = unsavedRows.length > 0;
-      }
-
-      // Create a template for new row
-      function createNewRowTemplate() {
-        const template = document.createElement('tr');
-        template.className = 'new-entry-row';
-        template.setAttribute('data-new-row', 'true');
-        template.innerHTML = `
-          <td>
-            <input type="hidden" name="added_at" class="added-at-input" value="">
-            <input type="text" name="customer_name" class="form-control form-control-sm editable name-input" 
-                   placeholder="Name" maxlength="100" pattern="[A-Za-z\s]+" 
-                   title="Only alphabetical characters allowed">
-          </td>
-          <td>
-            <input type="text" name="phone_number" class="form-control form-control-sm editable phone-input" 
-                   placeholder="Phone" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" 
-                   title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed">
-          </td>
-          <td>
-            <input type="email" name="email" class="form-control form-control-sm editable email-input" 
-                   placeholder="Email" maxlength="100" 
-                   pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" 
-                   title="Enter a valid email address (e.g., example@domain.com)">
-          </td>
-          <td>
-            <textarea name="address" class="form-control form-control-sm editable address-input" 
-                      rows="1" placeholder="Address" maxlength="255"></textarea>
-          </td>
-          <td>
-            <input type="url" name="website" class="form-control form-control-sm editable website-input" 
-                   placeholder="Website" maxlength="255" 
-                   pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" 
-                   title="Enter a valid URL (e.g., http://example.com)">
-          </td>
-          <td>
-            <select name="remarks" class="form-control form-control-sm editable remarks-input">
-              <option value="" selected>Select</option>
-              <option value="Callback">Callback</option>
-              <option value="Pre-sale">Pre-sale</option>
-              <option value="Sample rejected">Sample rejected</option>
-              <option value="Sale">Sale</option>
-            </select>
-          </td>
-          <td>
-            <textarea name="notes" class="form-control form-control-sm editable notes-input" rows="1" 
-                      placeholder="Notes" maxlength="255"></textarea>
-          </td>
-          <td>
-            <button type="button" class="action-save-btn btn btn-sm btn-outline-success" aria-label="Save New Row">Save</button>
-          </td>
-        `;
-        return template;
-      }
-
-      // Set timestamp for new rows
-      function setAddedAtTimestamp(row) {
-        const addedAtInput = row.querySelector('.added-at-input');
-        if (addedAtInput && !addedAtInput.value) {
-          const now = new Date();
-          addedAtInput.value = now.toISOString().slice(0, 19).replace('T', ' ');
-        }
-      }
-
-      // Live search and pagination functionality
-      const searchInput = document.getElementById('searchInput');
-      const searchField = document.getElementById('searchField');
-      const tableBody = document.getElementById('tableBody');
-      const pagination = document.getElementById('pagination');
-      const form = document.getElementById('callbackForm'); // Define form variable
-
-      window.loadPage = function(page) {
-        const query = searchInput.value.trim();
-        const field = searchField.value;
-        const url = new URL(window.location.href);
-        url.searchParams.set('page', page);
-        if (query) {
-          url.searchParams.set('q', query);
-          url.searchParams.set('search_field', field);
-        } else {
-          url.searchParams.delete('q');
-          url.searchParams.delete('search_field');
+        // Show toast notification
+        function showToast(message, type) {
+            const toastEl = document.getElementById('saveToast');
+            if (!toastEl) return;
+            const toastBody = toastEl.querySelector('.toast-body');
+            toastBody.textContent = message;
+            toastEl.classList.remove('bg-success', 'bg-danger');
+            toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
+            const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            toast.show();
         }
 
-        fetch(url, {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-          tableBody.innerHTML = data.callbacks_html;
-          pagination.innerHTML = data.pagination_html;
-          updateAddRowButtonState();
-        })
-        .catch(() => showToast('An error occurred while loading the page.', 'danger'));
-      };
+        // Check if any rows are in edit mode or unsaved
+        function updateAddRowButtonState() {
+            const addRowButton = document.getElementById('addNewRow');
+            if (!addRowButton) return;
+            const unsavedRows = document.querySelectorAll('.edit-mode, [data-new-row="true"]');
+            addRowButton.disabled = unsavedRows.length > 0;
+        }
 
-      function performSearch() {
-        window.loadPage(1); // Reset to first page on search
-      }
+        // Create a template for new row
+        function createNewRowTemplate() {
+            const template = document.createElement('tr');
+            template.className = 'new-entry-row';
+            template.setAttribute('data-new-row', 'true');
+            template.innerHTML = `
+                <td>
+                    <input type="hidden" name="added_at" class="added-at-input" value="">
+                    <input type="text" name="customer_name" class="form-control editable name-input" 
+                           placeholder="Name" maxlength="100" pattern="[A-Za-z\s]+" 
+                           title="Only alphabetical characters allowed">
+                </td>
+                <td>
+                    <input type="text" name="phone_number" class="form-control editable phone-input" 
+                           placeholder="Phone" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" 
+                           title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed">
+                </td>
+                <td>
+                    <input type="email" name="email" class="form-control editable email-input" 
+                           placeholder="Email" maxlength="100" 
+                           pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" 
+                           title="Enter a valid email address (e.g., example@domain.com)">
+                </td>
+                <td>
+                    <textarea name="address" class="form-control editable address-input" 
+                              rows="1" placeholder="Address" maxlength="255"></textarea>
+                </td>
+                <td>
+                    <input type="url" name="website" class="form-control editable website-input" 
+                           placeholder="Website" maxlength="255" 
+                           pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" 
+                           title="Enter a valid URL (e.g., http://example.com)">
+                </td>
+                <td>
+                    <select name="remarks" class="form-control editable remarks-input">
+                        <option value="" selected>Select</option>
+                        <option value="Callback">Callback</option>
+                        <option value="Pre-sale">Pre-sale</option>
+                        <option value="Sample rejected">Sample rejected</option>
+                        <option value="Sale">Sale</option>
+                    </select>
+                </td>
+                <td>
+                    <textarea name="notes" class="form-control editable notes-input" rows="1" 
+                              placeholder="Notes" maxlength="255"></textarea>
+                </td>
+                <td>
+                    <button type="button" class="action-save-btn" aria-label="Save New Row">Save</button>
+                </td>
+            `;
+            return template;
+        }
 
-      // Debounce to prevent excessive calls
-      let debounceTimeout;
-      searchInput.addEventListener('input', () => {
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(performSearch, 300);
-      });
-      searchField.addEventListener('change', performSearch);
+        // Sanitize input to prevent XSS
+        function sanitizeInput(value) {
+            const div = document.createElement('div');
+            div.textContent = value || '';
+            return div.innerHTML;
+        }
 
-      // Add new row functionality (admin only)
-      const addRowButton = document.getElementById('addNewRow');
-      if (addRowButton) {
-        addRowButton.addEventListener('click', function() {
-          const existingNewRow = document.querySelector('[data-new-row="true"]');
-          if (existingNewRow) return; // Prevent adding multiple new rows
-          const tableBody = document.querySelector('#tableBody');
-          const newRow = createNewRowTemplate();
-          tableBody.appendChild(newRow);
-          setAddedAtTimestamp(newRow);
-          const firstInput = newRow.querySelector('input:not([disabled])');
-          if (firstInput) firstInput.focus();
-          updateAddRowButtonState();
-        });
-      }
-
-      // Toggle edit mode
-      document.querySelector('#tableBody').addEventListener('click', function(e) {
-        if (e.target.classList.contains('edit-callback')) {
-          const row = e.target.closest('tr');
-          row.classList.add('edit-mode');
-          row.querySelectorAll('.display-text').forEach(span => span.style.display = 'none');
-          row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'block');
-          row.querySelector('.cancel-edit').style.display = 'inline';
-          row.querySelector('.action-save-btn').style.display = 'inline';
-          e.target.style.display = 'none';
-          const callbackId = row.getAttribute('data-callback-id');
-          if (callbackId) {
-            let callbackIdInput = row.querySelector('input[name="callback_id"]');
-            if (!callbackIdInput) {
-              callbackIdInput = document.createElement('input');
-              callbackIdInput.type = 'hidden';
-              callbackIdInput.name = 'callback_id';
-              row.querySelector('td:first-child').appendChild(callbackIdInput);
+        // Set timestamp for new rows
+        function setAddedAtTimestamp(row) {
+            const addedAtInput = row.querySelector('.added-at-input');
+            if (addedAtInput && !addedAtInput.value) {
+                const now = new Date();
+                addedAtInput.value = now.toISOString().slice(0, 19).replace('T', ' ');
             }
-            callbackIdInput.value = callbackId;
-          }
-          row.setAttribute('data-edited', 'true');
-          updateAddRowButtonState();
         }
-      });
 
-      // Cancel edit
-      document.querySelector('#tableBody').addEventListener('click', function(e) {
-        if (e.target.classList.contains('cancel-edit')) {
-          const row = e.target.closest('tr');
-          row.classList.remove('edit-mode');
-          row.querySelectorAll('.display-text').forEach(span => span.style.display = 'inline');
-          row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'none');
-          row.querySelector('.cancel-edit').style.display = 'none';
-          row.querySelector('.action-save-btn').style.display = 'none';
-          row.querySelector('.edit-callback').style.display = 'inline';
-          const callbackIdInput = row.querySelector('input[name="callback_id"]');
-          if (callbackIdInput) callbackIdInput.remove();
-          row.removeAttribute('data-edited');
-          row.querySelectorAll('.editable-input').forEach(input => {
-            const displayText = row.querySelector(`.display-text.${input.classList[1]}`)?.textContent || '';
-            input.value = input.tagName === 'SELECT' ? input.querySelector(`option[value="${displayText}"]`)?.value || '' : displayText;
-          });
-          updateAddRowButtonState();
+        // Add new row functionality
+        function addNewRow() {
+            const tableBody = document.querySelector('#tableBody');
+            const existingNewRow = document.querySelector('[data-new-row="true"]');
+            if (existingNewRow) return; // Prevent adding multiple new rows
+            const newRow = createNewRowTemplate();
+            tableBody.appendChild(newRow);
+            setAddedAtTimestamp(newRow);
+            const firstInput = newRow.querySelector('input');
+            if (firstInput) firstInput.focus();
+            updateAddRowButtonState();
         }
-      });
 
-      // Save row (new or edited)
-      document.querySelector('#tableBody').addEventListener('click', function(e) {
-        if (e.target.classList.contains('action-save-btn')) {
-          const row = e.target.closest('tr');
-          const form = document.getElementById('callbackForm');
-          const formData = new FormData();
-          const userRole = '{{ user_role }}';
-          const isNewRow = row.classList.contains('new-entry-row');
-          const callbackId = row.getAttribute('data-callback-id');
-          let isValid = true;
+        // Live search functionality
+        const searchInput = document.getElementById('searchInput');
+        const searchField = document.getElementById('searchField');
+        const tableBody = document.getElementById('tableBody');
+        const pagination = document.getElementById('pagination');
+        const form = document.getElementById('callbackForm'); // Define form variable
+        function performSearch() {
+            const query = searchInput.value.trim();
+            const field = searchField.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('q', query);
+            url.searchParams.set('search_field', field);
+            url.searchParams.set('page', '1'); // Reset to first page on new search
 
-          // Add CSRF token and target_user_id
-          formData.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
-          formData.append('target_user_id', form.querySelector('[name="target_user_id"]').value);
+            fetch(url, {
+              headers: {
+                      'X-Requested-With': 'XMLHttpRequest',
+                      'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                  }            })
+            .then(response => response.json())
+            .then(data => {
+                // Update table body
+                tableBody.innerHTML = data.callbacks_html;
+                // Update pagination
+                pagination.innerHTML = data.pagination_html;
+                updateAddRowButtonState();
+            })
+            .catch(() => showToast('An error occurred while searching.', 'danger'));
+        }
 
-          // Collect row data
-          const inputs = {
-            added_at: row.querySelector('.added-at-input'),
-            customer_name: row.querySelector(isNewRow ? '[name="customer_name"]' : '.name-input.editable-input'),
-            phone_number: row.querySelector(isNewRow ? '[name="phone_number"]' : '.phone-input.editable-input'),
-            email: row.querySelector(isNewRow ? '[name="email"]' : '.email-input.editable-input'),
-            address: row.querySelector(isNewRow ? '[name="address"]' : '.address-input.editable-input'),
-            website: row.querySelector(isNewRow ? '[name="website"]' : '.website-input.editable-input'),
-            remarks: row.querySelector(isNewRow ? '[name="remarks"]' : '.remarks-input.editable-input'),
-            notes: row.querySelector(isNewRow ? '[name="notes"]' : '.notes-input.editable-input'),
-          };
+        // Debounce to prevent excessive calls
+        let debounceTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(performSearch, 300);
+        });
+        searchField.addEventListener('change', performSearch);
 
-          if (Object.values(inputs).some(input => !input)) {
-            showToast('Missing input fields.', 'danger');
-            return;
-          }
+        // Toggle edit mode
+        document.querySelector('#tableBody').addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-callback')) {
+                const row = e.target.closest('tr');
+                row.classList.add('edit-mode');
+                row.querySelectorAll('.display-text').forEach(span => span.style.display = 'none');
+                row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'block');
+                row.querySelector('.cancel-edit').style.display = 'inline';
+                row.querySelector('.action-save-btn').style.display = 'inline';
+                e.target.style.display = 'none';
+                const callbackId = row.getAttribute('data-callback-id');
+                if (callbackId) {
+                    let callbackIdInput = row.querySelector('input[name="callback_id"]');
+                    if (!callbackIdInput) {
+                        callbackIdInput = document.createElement('input');
+                        callbackIdInput.type = 'hidden';
+                        callbackIdInput.name = 'callback_id';
+                        row.querySelector('td:first-child').appendChild(callbackIdInput);
+                    }
+                    callbackIdInput.value = callbackId;
+                }
+                row.setAttribute('data-edited', 'true');
+                updateAddRowButtonState();
+            }
+        });
 
-          // Add callback_id for edited rows
-          if (callbackId) {
-            formData.append('callback_id', callbackId);
-          }
-
-          // Add row data
-          Object.entries(inputs).forEach(([key, input]) => {
-            formData.append(key, sanitizeInput(input.value.trim()));
-          });
-
-          // Client-side validation
-          if (!inputs.customer_name.value.trim() || !inputs.phone_number.value.trim()) {
-            [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
-            isValid = false;
-          } else if (!/^[A-Za-z\s]+$/.test(inputs.customer_name.value.trim()) || !/^[\+\-\(\),./#0-9\s]+$/.test(inputs.phone_number.value.trim())) {
-            [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
-            isValid = false;
-          } else {
-            [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.remove('is-invalid'));
-          }
-          if (inputs.email.value.trim() && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(inputs.email.value.trim())) {
-            inputs.email.classList.add('is-invalid');
-            isValid = false;
-          } else {
-            inputs.email.classList.remove('is-invalid');
-          }
-          if (inputs.website.value.trim() && !/^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(inputs.website.value.trim())) {
-            inputs.website.classList.add('is-invalid');
-            isValid = false;
-          } else {
-            inputs.website.classList.remove('is-invalid');
-          }
-          if ((inputs.address.value.trim().length > 255) || (inputs.notes.value.trim().length > 255)) {
-            [inputs.address, inputs.notes].forEach(input => {
-              if (input.value.trim().length > 255) input.classList.add('is-invalid');
-            });
-            isValid = false;
-          } else {
-            [inputs.address, inputs.notes].forEach(input => input.classList.remove('is-invalid'));
-          }
-          if (inputs.remarks.value && !/^(Callback|Pre-sale|Sample rejected|Sale)$/.test(inputs.remarks.value)) {
-            inputs.remarks.classList.add('is-invalid');
-            isValid = false;
-          } else {
-            inputs.remarks.classList.remove('is-invalid');
-          }
-
-          if (!isValid) {
-            showToast('Please correct the invalid fields.', 'danger');
-            return;
-          }
-
-          fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              showToast(data.message, 'success');
-              if (isNewRow) {
-                row.remove();
-              } else {
+        // Cancel edit
+        document.querySelector('#tableBody').addEventListener('click', function(e) {
+            if (e.target.classList.contains('cancel-edit')) {
+                const row = e.target.closest('tr');
                 row.classList.remove('edit-mode');
-                row.querySelectorAll('.display-text').forEach(span => {
-                  const input = row.querySelector(`.editable-input.${span.classList[1]}`);
-                  span.textContent = input?.value || '';
-                  span.style.display = 'inline';
-                });
+                row.querySelectorAll('.display-text').forEach(span => span.style.display = 'inline');
                 row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'none');
                 row.querySelector('.cancel-edit').style.display = 'none';
-                row.querySelector('.action-save-btn').style.display = 'none';
                 row.querySelector('.edit-callback').style.display = 'inline';
-                row.querySelector('input[name="callback_id"]')?.remove();
+                row.querySelector('.action-save-btn').style.display = 'none';
+                const callbackIdInput = row.querySelector('input[name="callback_id"]');
+                if (callbackIdInput) callbackIdInput.remove();
                 row.removeAttribute('data-edited');
-              }
-              updateAddRowButtonState();
-              setTimeout(() => window.location.reload(), 1500);
-            } else {
-              showToast(data.message, 'danger');
+                row.querySelectorAll('.editable-input').forEach(input => {
+                    const displayText = row.querySelector(`.display-text.${input.classList[1]}`)?.textContent || '';
+                    input.value = displayText;
+                });
+                updateAddRowButtonState();
             }
-          })
-          .catch(() => showToast('An error occurred while saving.', 'danger'));
-        }
-      });
+        });
 
-      // Delete callback functionality
-      document.querySelector('#tableBody').addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-callback')) {
-          if (!confirm('Are you sure you want to delete this callback?')) {
-            return;
-          }
-          const row = e.target.closest('tr');
-          const callbackId = row.dataset.callbackId;
-          fetch('/delete_callback/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({ callback_ids: [callbackId] })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              showToast(data.message, 'success');
-              row.remove();
-              updateAddRowButtonState();
-            } else {
-              showToast(data.message, 'danger');
+        // Save row (new or edited)
+        document.querySelector('#tableBody').addEventListener('click', function(e) {
+            if (e.target.classList.contains('action-save-btn')) {
+                const row = e.target.closest('tr');
+                const form = document.getElementById('callbackForm');
+                const formData = new FormData();
+                const isNewRow = row.classList.contains('new-entry-row');
+                const callbackId = row.getAttribute('data-callback-id');
+                let isValid = true;
+
+                // Add CSRF token and target_user_id (if present)
+                formData.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
+                if (form.querySelector('[name="target_user_id"]')) {
+                    formData.append('target_user_id', form.querySelector('[name="target_user_id"]').value);
+                }
+
+                // Collect row data
+                const inputs = {
+                    added_at: row.querySelector('.added-at-input'),
+                    customer_name: row.querySelector(isNewRow ? '[name="customer_name"]' : '.name-input.editable-input'),
+                    phone_number: row.querySelector(isNewRow ? '[name="phone_number"]' : '.phone-input.editable-input'),
+                    email: row.querySelector(isNewRow ? '[name="email"]' : '.email-input.editable-input'),
+                    address: row.querySelector(isNewRow ? '[name="address"]' : '.address-input.editable-input'),
+                    website: row.querySelector(isNewRow ? '[name="website"]' : '.website-input.editable-input'),
+                    remarks: row.querySelector(isNewRow ? '[name="remarks"]' : '.remarks-input.editable-input'),
+                    notes: row.querySelector(isNewRow ? '[name="notes"]' : '.notes-input.editable-input'),
+                };
+
+                if (Object.values(inputs).some(input => !input)) {
+                    showToast('Missing input fields.', 'danger');
+                    return;
+                }
+
+                // Add callback_id for edited rows
+                if (callbackId) {
+                    formData.append('callback_id', callbackId);
+                }
+
+                // Add row data
+                Object.entries(inputs).forEach(([key, input]) => {
+                    formData.append(key, sanitizeInput(input.value.trim()));
+                });
+
+                // Client-side validation
+                if (!inputs.customer_name.value.trim() || !inputs.phone_number.value.trim()) {
+                    [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
+                    isValid = false;
+                } else if (!/^[A-Za-z\s]+$/.test(inputs.customer_name.value.trim()) || !/^[\+\-\(\),./#0-9\s]+$/.test(inputs.phone_number.value.trim())) {
+                    [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
+                    isValid = false;
+                } else {
+                    [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.remove('is-invalid'));
+                }
+                if (inputs.email.value.trim() && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(inputs.email.value.trim())) {
+                    inputs.email.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    inputs.email.classList.remove('is-invalid');
+                }
+                if (inputs.website.value.trim() && !/^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(inputs.website.value.trim())) {
+                    inputs.website.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    inputs.website.classList.remove('is-invalid');
+                }
+
+                if (!isValid) {
+                    showToast('Please correct the invalid fields.', 'danger');
+                    return;
+                }
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast(data.message, 'success');
+                        if (isNewRow) {
+                            row.remove();
+                        } else {
+                            row.classList.remove('edit-mode');
+                            row.querySelectorAll('.display-text').forEach(span => {
+                                const input = row.querySelector(`.editable-input.${span.classList[1]}`);
+                                span.textContent = input?.value || '';
+                                span.style.display = 'inline';
+                            });
+                            row.querySelectorAll('.editable-input').forEach(input => input.style.display = 'none');
+                            row.querySelector('.cancel-edit').style.display = 'none';
+                            row.querySelector('.edit-callback').style.display = 'inline';
+                            row.querySelector('.action-save-btn').style.display = 'none';
+                            row.querySelector('input[name="callback_id"]')?.remove();
+                            row.removeAttribute('data-edited');
+                        }
+                        updateAddRowButtonState();
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showToast(data.message, 'danger');
+                    }
+                })
+                .catch(() => showToast('An error occurred while saving.', 'danger'));
             }
-          })
-          .catch(() => showToast('An error occurred while deleting.', 'danger'));
+        });
+
+        // Add new row button
+        const addRowButton = document.getElementById('addNewRow');
+        if (addRowButton) {
+            addRowButton.addEventListener('click', addNewRow);
+            updateAddRowButtonState();
         }
-      });
 
-      // Set timestamp when editing new row
-      document.querySelector('#tableBody').addEventListener('input', function(e) {
-        if (e.target.classList.contains('editable') && e.target.closest('[data-new-row="true"]')) {
-          const row = e.target.closest('[data-new-row="true"]');
-          setAddedAtTimestamp(row);
+        // Set timestamp when editing new row
+        document.querySelector('#tableBody').addEventListener('input', function(e) {
+            if (e.target.classList.contains('editable') && e.target.closest('[data-new-row="true"]')) {
+                const row = e.target.closest('[data-new-row="true"]');
+                setAddedAtTimestamp(row);
+            }
+        });
+
+        // Delete callback functionality
+        document.querySelector('#tableBody').addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-callback')) {
+                if (!confirm('Are you sure you want to delete this callback?')) {
+                    return;
+                }
+                const row = e.target.closest('tr');
+                const callbackId = row.dataset.callbackId;
+                fetch('/delete_callback/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ callback_ids: [callbackId] })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast(data.message, 'success');
+                        row.remove();
+                        updateAddRowButtonState();
+                    } else {
+                        showToast(data.message, 'danger');
+                    }
+                })
+                .catch(() => showToast('An error occurred while deleting.', 'danger'));
+            }
+        });
+
+        // Disable copy, cut, paste for agents
+        if ('{{ user_role }}' === 'agent') {
+            document.addEventListener('copy', e => e.preventDefault());
+            document.addEventListener('cut', e => e.preventDefault());
+            document.addEventListener('paste', e => e.preventDefault());
         }
-      });
-
-      // Prevent copy/cut/paste for agents
-      if ('{{ user_role }}' === 'agent') {
-        document.addEventListener('copy', e => e.preventDefault());
-        document.addEventListener('cut', e => e.preventDefault());
-        document.addEventListener('paste', e => e.preventDefault());
-      }
-
-      // Initialize Add Row button state
-      updateAddRowButtonState();
     });
-  </script>
+</script>
 </body>
 </html>
