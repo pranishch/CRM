@@ -323,7 +323,7 @@
                     <td>
                       <input type="hidden" name="added_at" class="added-at-input" value="{{ callback.added_at|date:'Y-m-d H:i:s' }}">
                       <span class="display text name-input">{{ callback.customer_name|default_if_none:'' }}</span>
-                      <input type="text" class="editable-input name-input" style="display: none;" name="customer_name" maxlength="100" pattern="[A-Za-z\s]+" title="Only alphabetical characters allowed" value="{{ callback.customer_name|default_if_none:'' }}">
+                      <input type="text" class="editable-input name-input" style="display: none;" name="customer_name" maxlength="100" pattern="\+?[0-9]{1,4}[\-\s]?[0-9]{1,4}[\-\s]?[0-9]{1,4}[\-\s]?[0-9]{1,4}" title="Only alphabetical characters allowed" value="{{ callback.customer_name|default_if_none:'' }}">
                     </td>
                       <td>
                       <span class="display-text phone-input">{{ callback.phone_number|default_if_none:'' }}</span>
@@ -339,7 +339,7 @@
                     </td>
                     <td>
                       <span class="display-text website-input">{{ callback.website|default_if_none:'' }}</span>
-                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
+                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?://(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/.*)?" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text remarks-input">{{ callback.remarks|default_if_none:'' }}</span>
@@ -445,7 +445,7 @@
                 </td>
                 <td>
                     <input type="text" name="phone_number" class="form-control editable phone-input" 
-                           placeholder="Phone" maxlength="20" pattern="[\+\-(),.#0-9 ]+"
+                           placeholder="Phone" maxlength="20" pattern="\+?[0-9]{1,4}[\-\s]?[0-9]{1,4}[\-\s]?[0-9]{1,4}[\-\s]?[0-9]{1,4}"
                            title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed">
                 </td>
                 <td>
@@ -461,7 +461,7 @@
                 <td>
                     <input type="url" name="website" class="form-control editable website-input" 
                            placeholder="Website" maxlength="255" 
-                           pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?"
+                           pattern="https?://(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/.*)?"
                            title="Enter a valid URL (e.g., http://example.com)">
                 </td>
                 <td>
@@ -645,7 +645,7 @@
                 if (!inputs.customer_name.value.trim() || !inputs.phone_number.value.trim()) {
                     [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
                     isValid = false;
-                } else if (!/^[A-Za-z\s]+$/.test(inputs.customer_name.value.trim()) || !/^[\+\-(),.#0-9 ]+$/.test(inputs.phone_number.value.trim())) {
+                } else if (!/^[A-Za-z\s]+$/.test(inputs.customer_name.value.trim()) || !/^\+?[0-9]{1,4}[\-\s]?[0-9]{1,4}[\-\s]?[0-9]{1,4}[\-\s]?[0-9]{1,4}$/.test(inputs.phone_number.value.trim())) {
                     [inputs.customer_name, inputs.phone_number].forEach(input => input.classList.add('is-invalid'));
                     isValid = false;
                 } else {
@@ -657,7 +657,7 @@
                 } else {
                     inputs.email.classList.remove('is-invalid');
                 }
-                if (inputs.website.value.trim() && !/^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(inputs.website.value.trim())) {
+                if (inputs.website.value.trim() && !new RegExp('^https?://(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}(?:/.*)?$').test(inputs.website.value.trim())) {
                     inputs.website.classList.add('is-invalid');
                     isValid = false;
                 } else {
