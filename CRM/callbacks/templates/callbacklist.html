@@ -327,11 +327,11 @@
                     </td>
                       <td>
                       <span class="display-text phone-input">{{ callback.phone_number|default_if_none:'' }}</span>
-                      <input type="text" class="editable-input phone-input" style="display: none;" name="phone_number" maxlength="20" pattern="[\+\-\(\),./#0-9\s]+" title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" value="{{ callback.phone_number|default_if_none:'' }}">
+                      <input type="text" class="editable-input phone-input" style="display: none;" name="phone_number" maxlength="20" pattern="[\+\-(),.#0-9 ]+" title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed" value="{{ callback.phone_number|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text email-input">{{ callback.email|default_if_none:'' }}</span>
-                      <input type="email" class="editable-input email-input" style="display: none;" name="email" maxlength="100" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Enter a valid email address (e.g., example@domain.com)" value="{{ callback.email|default_if_none:'' }}">
+                      <input type="email" class="editable-input email-input" style="display: none;" name="email" maxlength="100" pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title="Enter a valid email address (e.g., example@domain.com)" value="{{ callback.email|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text address-input">{{ callback.address|default_if_none:'' }}</span>
@@ -339,7 +339,7 @@
                     </td>
                     <td>
                       <span class="display-text website-input">{{ callback.website|default_if_none:'' }}</span>
-                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
+                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text remarks-input">{{ callback.remarks|default_if_none:'' }}</span>
@@ -445,13 +445,13 @@
                 </td>
                 <td>
                     <input type="text" name="phone_number" class="form-control editable phone-input" 
-                           placeholder="Phone" maxlength="20" pattern="[+\\-(),./#0-9\\s]+"
+                           placeholder="Phone" maxlength="20" pattern="[\+\-(),.#0-9 ]+"
                            title="Only numbers, +, -, (), comma, period, /, #, and spaces allowed">
                 </td>
                 <td>
                     <input type="email" name="email" class="form-control editable email-input" 
                            placeholder="Email" maxlength="100" 
-                           pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+                           pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
                            title="Enter a valid email address (e.g., example@domain.com)">
                 </td>
                 <td>
@@ -461,7 +461,7 @@
                 <td>
                     <input type="url" name="website" class="form-control editable website-input" 
                            placeholder="Website" maxlength="255" 
-                           pattern="https?://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?"
+                           pattern="https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?"
                            title="Enter a valid URL (e.g., http://example.com)">
                 </td>
                 <td>
