@@ -339,7 +339,8 @@
                     </td>
                     <td>
                       <span class="display-text website-input">{{ callback.website|default_if_none:'' }}</span>
-                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255" pattern="https?:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(\/.*)?" title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
+                      <input type="url" class="editable-input website-input" style="display: none;" name="website" maxlength="255"        pattern="https?://[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(\/.*)?"
+ title="Enter a valid URL (e.g., http://example.com)" value="{{ callback.website|default_if_none:'' }}">
                     </td>
                     <td>
                       <span class="display-text remarks-input">{{ callback.remarks|default_if_none:'' }}</span>
@@ -460,9 +461,10 @@
                 </td>
                 <td>
                     <input type="url" name="website" class="form-control editable website-input" 
-                           placeholder="Website" maxlength="255" 
-                           pattern="https?:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(\/.*)?"
-                           title="Enter a valid URL (e.g., http://example.com)">
+                      placeholder="Website" maxlength="255" 
+                      pattern="https?://[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(\/.*)?"
+                      title="Enter a valid URL (e.g., http://example.com)">
+
                 </td>
                 <td>
                     <select name="remarks" class="form-control editable remarks-input">

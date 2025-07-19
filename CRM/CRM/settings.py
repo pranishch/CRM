@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'txu-we#=u5p(9xf-cg!7k(-i6ywt4lu2x$qcq^q4f1r%%r4_2z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-ALLOWED_HOSTS = ['crm-b6a4.onrender.com']
-CSRF_TRUSTED_ORIGINS = ['https://crm-b6a4.onrender.com']
+DEBUG = True
+ALLOWED_HOSTS = ['crm-b6a4.onrender.com', 'localhost', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://crm-b6a4.onrender.com', 'http://localhost', 'http://127.0.0.1']
 
 # Application definition
 
