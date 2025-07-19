@@ -542,7 +542,7 @@
                 pagination.innerHTML = data.pagination_html;
                 updateAddRowButtonState();
             })
-            .catch(() => showToast('An error occurred while searching.', 'danger'));
+            .catch((e) => console.log(e));
         }
 
         // Debounce to prevent excessive calls
