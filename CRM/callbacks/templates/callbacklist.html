@@ -539,7 +539,7 @@
                 // Update table body
                 tableBody.innerHTML = data.callbacks_html;
                 // Update pagination
-                pagination.innerHTML = data.pagination_html;
+                if (pagination) {pagination.innerHTML = data.pagination_html}
                 updateAddRowButtonState();
             })
             .catch((e) => console.log(e));
